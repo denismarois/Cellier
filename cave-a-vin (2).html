@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Ma Cave</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#ffffff">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#F2F2F7;color:#111;font-family:'Inter',sans-serif;min-height:100vh;overscroll-behavior:none}
+#app{max-width:430px;margin:0 auto;min-height:100vh;background:#F2F2F7;position:relative}
+input,select,textarea,button{outline:none;font-family:'Inter',sans-serif}
+::-webkit-scrollbar{width:0;height:0}
+.hidden{display:none!important}
+
+/* HEADER */
+.header{background:#fff;padding:52px 20px 0;border-bottom:1px solid #E8E8E8;position:sticky;top:0;z-index:20}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.header-title{font-size:22px;font-weight:800;color:#111}
+.header-sub{font-size:13px;color:#999;font-weight:500;margin-top:1px}
+.hdr-btn{background:#111;color:#fff;border:none;border-radius:50%;width:36px;height:36px;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sort-bar{display:flex;gap:8px;padding:10px 20px;overflow-x:auto;background:#fff;border-bottom:1px solid #E8E8E8}
+.sort-chip{background:#F2F2F7;border:none;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:600;color:#555;cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.sort-chip.active{background:#111;color:#fff}
+.type-bar{display:flex;gap:8px;padding:10px 20px;overflow-x:auto;background:#fff;border-bottom:1px solid #E8E8E8}
+.type-chip{background:#F2F2F7;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:#666;cursor:pointer;white-space:nowrap;transition:all .2s;flex-shrink:0}
+.type-chip.active{color:#fff}
+.type-chip.t-tous.active{background:#111}
+.type-chip.t-rouge.active{background:#8B2020}
+.type-chip.t-blanc.active{background:#B8972A}
+.type-chip.t-champagne.active{background:#A0783C}
+.type-chip.t-rose.active{background:#C06080}
+.type-chip.t-doux.active{background:#7A5C28}
+
+/* LIST */
+.wine-list{padding:12px 16px 110px;display:flex;flex-direction:column;gap:10px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 32px;text-align:center;gap:12px}
+.empty-icon{font-size:52px}
+.empty-title{font-size:18px;font-weight:700;color:#333}
+.empty-sub{font-size:14px;color:#999;line-height:1.5}
+.empty-cta{background:#111;color:#fff;border:none;border-radius:14px;padding:13px 28px;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px}
+
+/* WINE CARD */
+.wine-card{background:#fff;border-radius:18px;display:flex;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.07);cursor:pointer;transition:transform .15s;min-height:118px}
+.wine-card:active{transform:scale(0.985)}
+.card-left{width:80px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;padding:10px 0;position:relative}
+.card-bottle{font-size:42px;line-height:1}
+.card-qty-badge{position:absolute;top:7px;left:7px;background:#E8B84B;color:#fff;font-size:10px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.card-body{flex:1;padding:12px 14px 12px 8px;display:flex;flex-direction:column;justify-content:space-between;min-width:0}
+.card-vintage{font-size:12px;font-weight:700;color:#C9843A;margin-bottom:2px}
+.card-name{font-size:14px;font-weight:700;color:#111;line-height:1.25;margin-bottom:3px}
+.card-meta{font-size:11px;color:#BBB}
+.card-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:4px 9px;font-size:11px;font-weight:600}
+.pill-ap{background:#F0F0F0;color:#444}
+.pill-ap.peak{background:#E8F7F0;color:#1E9E5E}
+.pill-ap.soon{background:#FFF4E0;color:#C98000}
+.pill-ap.early{background:#E8F0FF;color:#2060D0}
+.pill-ap.wait{background:#F5F5F5;color:#999}
+.pill-ap.decline{background:#FEF0F0;color:#D04040}
+.pill-loc{background:#F0EEFF;color:#6040CC}
+.pill-price{background:#F5F5F5;color:#555}
+.pill-gain{background:#F0FFF4;color:#1a7a40}
+.pill-loss{background:#FFF0F0;color:#c03030}
+
+/* SLIDE VIEW */
+.slide-view{position:fixed;inset:0;background:#F2F2F7;z-index:100;overflow-y:auto;transform:translateX(100%);transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.slide-view.open{transform:translateX(0)}
+.slide-top{display:flex;align-items:center;justify-content:space-between;padding:52px 20px 12px;background:#fff;position:sticky;top:0;z-index:10;border-bottom:1px solid #F0F0F0}
+.slide-back{background:#F2F2F7;border:none;border-radius:50%;width:34px;height:34px;font-size:20px;cursor:pointer;color:#111;display:flex;align-items:center;justify-content:center}
+.slide-title{font-size:16px;font-weight:700;color:#111}
+.slide-act{background:#F2F2F7;border:none;border-radius:50%;width:34px;height:34px;font-size:16px;cursor:pointer;color:#111;display:flex;align-items:center;justify-content:center}
+
+/* DETAIL */
+.d-hero{display:flex;align-items:center;justify-content:center;height:150px;font-size:78px}
+.d-sec{background:#fff;border-radius:18px;margin:0 16px 12px;padding:16px}
+.d-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#BBB;margin-bottom:10px}
+.d-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #F5F5F5}
+.d-row:last-child{border-bottom:none;padding-bottom:0}
+.d-rl{font-size:14px;color:#888}
+.d-rv{font-size:14px;font-weight:600;color:#111;text-align:right}
+.d-rv.green{color:#1E9E5E}
+.d-rv.red{color:#D04040}
+.d-rv.gold{color:#C9843A}
+.apbar-lbls{display:flex;justify-content:space-between;font-size:10px;color:#BBB;margin-bottom:4px;font-weight:500}
+.apbar-track{background:#F0F0F0;border-radius:4px;height:7px;position:relative;overflow:hidden}
+.engine-box{background:#F0FFF4;border:1px solid #C0E8D0;border-radius:12px;padding:12px;margin-top:10px}
+.eng-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#3A8A5A;margin-bottom:8px}
+.eng-row{display:flex;justify-content:space-between;padding:3px 0}
+.eng-f{font-size:12px;color:#888}
+.eng-v{font-size:12px;font-weight:600}
+
+/* PLACEMENT SECTION in detail */
+.place-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #F5F5F5}
+.place-row:last-child{border-bottom:none}
+.place-row-info{flex:1}
+.place-row-name{font-size:14px;font-weight:600;color:#111}
+.place-row-sec{font-size:12px;color:#999;margin-top:1px}
+.place-row-qty{font-size:18px;font-weight:800;color:#111;min-width:24px;text-align:center}
+.place-row-btns{display:flex;gap:8px;align-items:center}
+.qty-btn{background:#F2F2F7;border:none;border-radius:50%;width:30px;height:30px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:#111}
+.qty-btn.minus{color:#D04040}
+.qty-btn.plus{color:#1E9E5E}
+.withdraw-btn{background:#FEF0F0;border:none;border-radius:10px;color:#D04040;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer}
+.add-place-btn{width:100%;background:#F2F2F7;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:#111;cursor:pointer;margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* BOTTOM SHEET */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:flex-end}
+.sheet{background:#F2F2F7;width:100%;border-radius:24px 24px 0 0;padding:0 0 40px;animation:slideUp .3s cubic-bezier(.16,1,.3,1);max-width:430px;margin:0 auto;max-height:94vh;overflow-y:auto}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sh-handle{width:36px;height:4px;background:#DDD;border-radius:2px;margin:12px auto}
+.sh-head{display:flex;justify-content:space-between;align-items:center;padding:4px 20px 14px}
+.sh-title{font-size:18px;font-weight:800;color:#111}
+.sh-close{background:#E8E8E8;border:none;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;color:#555;display:flex;align-items:center;justify-content:center}
+.fsec{background:#fff;border-radius:16px;margin:0 16px 10px;overflow:hidden}
+.frow{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid #F5F5F5}
+.frow:last-child{border-bottom:none}
+.flbl{font-size:14px;color:#111;font-weight:500;flex-shrink:0;min-width:100px}
+.finput{background:none;border:none;color:#111;font-size:14px;text-align:right;font-weight:600;flex:1;min-width:0}
+.finput::placeholder{color:#CCC;font-weight:400}
+.fselect{background:none;border:none;color:#111;font-size:14px;text-align:right;font-weight:600;appearance:none;cursor:pointer;max-width:180px}
+.ftextarea{background:#fff;border:none;border-radius:16px;width:calc(100% - 32px);margin:0 16px 10px;padding:13px 16px;font-size:14px;color:#111;resize:none;min-height:80px;display:block}
+.ftextarea::placeholder{color:#CCC}
+.sh-btn{margin:0 16px;width:calc(100% - 32px);background:#111;color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;display:block}
+.sh-btn+.sh-btn{margin-top:8px}
+.sh-btn.danger{background:#D04040}
+.sh-btn.ghost{background:#F2F2F7;color:#111}
+.auto-box{background:#E8F7F0;border-radius:12px;padding:12px 14px;margin:0 16px 10px;display:none}
+.auto-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#1E9E5E;margin-bottom:5px}
+.auto-result{font-size:16px;font-weight:800;color:#111}
+.auto-detail{font-size:11px;color:#5AAA7A;margin-top:3px;line-height:1.5}
+.override-row{background:#fff;border-radius:12px;margin:0 16px 10px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.toggle{width:44px;height:26px;background:#DDD;border-radius:13px;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:#34C759}
+.toggle-dot{position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on .toggle-dot{left:21px}
+.scan-btn{margin:0 16px 10px;width:calc(100% - 32px);background:#111;color:#fff;border:none;border-radius:14px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.saq-banner{background:#E8F7F0;border:1px solid #A8DFC0;border-radius:12px;padding:11px 14px;margin:0 16px 10px;display:flex;align-items:center;gap:10px}
+
+/* PLACEMENT PICKER SHEET */
+.place-section-hdr{padding:10px 16px 6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#BBB}
+.place-row-option{display:flex;align-items:center;gap:12px;padding:12px 16px;background:#fff;border-bottom:1px solid #F8F8F8;cursor:pointer;transition:background .15s}
+.place-row-option:active{background:#F5F5F5}
+.place-row-option.has-wine{background:#FFFBF0;border-left:3px solid #E8B84B}
+.place-row-option.full{opacity:.4;cursor:not-allowed;pointer-events:none}
+.pro-left{flex:1;min-width:0}
+.pro-name{font-size:14px;font-weight:600;color:#111}
+.pro-detail{font-size:12px;color:#999;margin-top:2px}
+.pro-wine-badge{font-size:11px;font-weight:700;color:#C9843A;background:#FFF4E0;border-radius:8px;padding:2px 7px;margin-top:4px;display:inline-block}
+.pro-right{text-align:right;flex-shrink:0}
+.pro-free{font-size:15px;font-weight:800;color:#1E9E5E}
+.pro-free.warn{color:#C98000}
+.pro-free.none{color:#D04040}
+.pro-free-lbl{font-size:10px;color:#BBB;margin-top:1px}
+.fill-bar{width:64px;height:5px;background:#F0F0F0;border-radius:3px;overflow:hidden;margin-top:4px}
+.fill-inner{height:100%;border-radius:3px;background:#34C759;transition:width .3s}
+.fill-inner.warn{background:#F4A827}
+.fill-inner.full{background:#D04040}
+.place-qty-ctrl{display:flex;align-items:center;gap:8px;background:#F2F2F7;border-radius:12px;padding:6px 10px}
+.pqc-btn{background:none;border:none;font-size:20px;font-weight:700;cursor:pointer;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.pqc-btn:active{background:#E0E0E0}
+.pqc-val{font-size:16px;font-weight:800;color:#111;min-width:20px;text-align:center}
+.placement-summary{background:#fff;border-radius:16px;margin:0 16px 10px;overflow:hidden}
+.ps-row{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #F8F8F8}
+.ps-row:last-child{border-bottom:none}
+.ps-left{flex:1}
+.ps-loc{font-size:14px;font-weight:700;color:#111}
+.ps-detail{font-size:12px;color:#999;margin-top:1px}
+.ps-qty{font-size:18px;font-weight:800;color:#111;min-width:24px;text-align:center}
+.ps-remove{background:none;border:none;color:#D04040;font-size:18px;cursor:pointer;padding:4px}
+.remaining-badge{background:#FFF4E0;border:1px solid #F4D080;border-radius:12px;padding:10px 14px;margin:0 16px 10px;display:flex;align-items:center;gap:8px}
+.remaining-badge.done{background:#E8F7F0;border-color:#A8DFC0}
+.rb-icon{font-size:20px}
+.rb-text{font-size:13px;font-weight:600}
+.rb-sub{font-size:12px;color:#888;margin-top:1px}
+
+/* CAVE VIEW */
+.cave-card{background:#fff;border-radius:18px;margin:0 16px 12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.cave-card-hdr{display:flex;justify-content:space-between;align-items:center;padding:15px 16px;cursor:pointer;border-bottom:1px solid #F5F5F5}
+.cave-card-title{font-size:16px;font-weight:700;color:#111}
+.cave-card-meta{font-size:12px;color:#999;margin-top:2px}
+.cave-card-right{display:flex;align-items:center;gap:8px}
+.icon-btn{background:#F2F2F7;border:none;border-radius:8px;width:28px;height:28px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#555}
+.chevron{font-size:16px;color:#CCC;transition:transform .2s}
+.chevron.open{transform:rotate(90deg)}
+.cave-row-item{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid #F8F8F8}
+.cave-row-item:last-child{border-bottom:none}
+.cri-name{font-size:14px;font-weight:600;color:#333}
+.cri-cap{font-size:12px;color:#999}
+.cri-right{display:flex;align-items:center;gap:10px}
+.fill-bar-sm{width:72px;height:6px;background:#F0F0F0;border-radius:3px;overflow:hidden}
+.fill-inner-sm{height:100%;border-radius:3px;transition:width .3s}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid #E8E8E8;display:flex;justify-content:space-around;padding:8px 0 24px;z-index:50}
+.nav-btn{background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 16px;color:#CCC;font-size:10px;font-weight:600;transition:color .15s}
+.nav-btn.active{color:#111}
+.nav-btn svg{width:24px;height:24px}
+
+/* SCANNER */
+.scanner-view{position:fixed;inset:0;background:#000;z-index:300;display:flex;flex-direction:column}
+.scanner-vf{position:relative;flex:1;overflow:hidden}
+#scanner-video{width:100%;height:100%;object-fit:cover}
+.vf-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.vf-frame{width:75%;max-width:300px;height:130px;position:relative}
+.vf-corner{position:absolute;width:26px;height:26px;border-color:#fff;border-style:solid}
+.vf-tl{top:0;left:0;border-width:3px 0 0 3px;border-radius:3px 0 0 0}
+.vf-tr{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 3px 0 0}
+.vf-bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 3px}
+.vf-br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 3px 0}
+.vf-line{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,#C9843A,transparent);animation:scanline 2s ease-in-out infinite}
+@keyframes scanline{0%,100%{top:8%}50%{top:88%}}
+.vf-counter{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.6);border-radius:20px;padding:6px 14px;color:#fff;font-size:14px;font-weight:700}
+.vf-status{margin-top:20px;color:#fff;font-size:14px;font-weight:600;text-align:center;padding:0 20px}
+.scanner-bottom{background:#111;padding:18px 20px 44px;display:flex;flex-direction:column;gap:10px;align-items:center}
+.scanner-hint{color:#666;font-size:12px;text-align:center}
+.scan-manual-row{display:flex;gap:8px;width:100%}
+.scan-manual-row input{flex:1;background:#222;border:1px solid #333;border-radius:12px;color:#fff;padding:11px 14px;font-size:14px}
+.scan-manual-row input::placeholder{color:#555}
+.scan-manual-row button{background:#C9843A;border:none;border-radius:12px;color:#fff;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer}
+.scan-cancel{background:#333;border:none;border-radius:12px;color:#fff;padding:11px 32px;font-size:14px;font-weight:600;cursor:pointer}
+.scan-scanned-list{width:100%;background:#1a1a1a;border-radius:12px;padding:10px 14px;max-height:100px;overflow-y:auto}
+.ssl-item{color:#fff;font-size:12px;padding:3px 0;border-bottom:1px solid #333}
+.ssl-item:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- MAIN -->
+<div id="main-view">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-title">Ma Cave 🍷</div>
+        <div class="header-sub" id="header-sub">Cave vide</div>
+      </div>
+      <button class="hdr-btn" onclick="openAddWine()">+</button>
+    </div>
+    <div class="sort-bar">
+      <button class="sort-chip active" onclick="setSort('apogee',this)">⏱ Prêt à boire</button>
+      <button class="sort-chip" onclick="setSort('price_asc',this)">Prix ↑</button>
+      <button class="sort-chip" onclick="setSort('price_desc',this)">Prix ↓</button>
+      <button class="sort-chip" onclick="setSort('rating',this)">★ Note</button>
+      <button class="sort-chip" onclick="setSort('region',this)">Région</button>
+      <button class="sort-chip" onclick="setSort('section',this)">📦 Section</button>
+    </div>
+    <div class="type-bar">
+      <button class="type-chip t-tous active" onclick="setType('tous',this)">Tous</button>
+      <button class="type-chip t-rouge" onclick="setType('rouge',this)">🍷 Rouge</button>
+      <button class="type-chip t-blanc" onclick="setType('blanc',this)">🥂 Blanc</button>
+      <button class="type-chip t-champagne" onclick="setType('champagne',this)">🍾 Champagne</button>
+      <button class="type-chip t-rose" onclick="setType('rosé',this)">🌸 Rosé</button>
+      <button class="type-chip t-doux" onclick="setType('doux',this)">🍯 Doux</button>
+    </div>
+  </div>
+  <div class="wine-list" id="wine-list"></div>
+</div>
+
+<!-- DETAIL -->
+<div id="detail-view" class="slide-view">
+  <div class="slide-top">
+    <button class="slide-back" onclick="closeDetail()">‹</button>
+    <div class="slide-title" id="detail-title"></div>
+    <button class="slide-act" onclick="editCurrentWine()">✎</button>
+  </div>
+  <div id="detail-body"></div>
+</div>
+
+<!-- CAVE VIEW -->
+<div id="cave-view" class="slide-view">
+  <div class="slide-top">
+    <button class="slide-back" onclick="closeCaveView()">‹</button>
+    <div class="slide-title">Ma Cave</div>
+    <button class="slide-act" onclick="openAddSection()">+</button>
+  </div>
+  <div style="padding:12px 0 100px" id="cave-body"></div>
+</div>
+
+<!-- ADD/EDIT WINE SHEET -->
+<div class="overlay hidden" id="add-wine-overlay" onclick="if(event.target===this)closeAddWine()">
+ <div class="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-head">
+   <div class="sh-title" id="aw-title">Ajouter un vin</div>
+   <button class="sh-close" onclick="closeAddWine()">✕</button>
+  </div>
+  <button class="scan-btn" onclick="openScanner('add')">
+   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><line x1="16" y1="16" x2="21" y2="16"/><line x1="21" y1="16" x2="21" y2="21"/><line x1="16" y1="21" x2="21" y2="21"/><line x1="11" y1="3" x2="11" y2="8"/><line x1="8" y1="11" x2="13" y2="11"/><line x1="3" y1="11" x2="8" y2="11"/></svg>
+   Scanner le code-barres SAQ
+  </button>
+  <div class="saq-banner hidden" id="saq-banner">
+   <span id="saq-icon" style="font-size:20px">✅</span>
+   <div><div id="saq-title" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#1E9E5E">Produit SAQ trouvé</div><div id="saq-name" style="font-size:13px;color:#111;font-weight:600;margin-top:1px"></div></div>
+  </div>
+  <div class="fsec">
+   <div class="frow"><span class="flbl">Nom</span><input class="finput" id="f-name" placeholder="Nom du vin"></div>
+   <div class="frow"><span class="flbl">Région</span>
+    <select class="fselect" id="f-region" onchange="onFormChange()">
+     <option value="">Choisir…</option>
+     <option>Bordeaux</option><option>Bourgogne</option><option>Champagne</option>
+     <option>Rhône</option><option>Loire</option><option>Alsace</option>
+     <option>Provence</option><option>Languedoc</option><option>Toscane</option>
+     <option>Piémont</option><option>Espagne</option><option>Australie</option>
+     <option>Californie</option><option>Argentine</option><option>Autre</option>
+    </select>
+   </div>
+   <div class="frow"><span class="flbl">Appellation</span><input class="finput" id="f-appel" placeholder="Appellation…"></div>
+   <div class="frow"><span class="flbl">Type</span>
+    <select class="fselect" id="f-type" onchange="onFormChange()">
+     <option value="rouge">Rouge</option><option value="blanc">Blanc</option>
+     <option value="champagne">Champagne</option><option value="rosé">Rosé</option>
+     <option value="doux">Doux / Liquoreux</option>
+    </select>
+   </div>
+   <div class="frow"><span class="flbl">Cépage</span>
+    <select class="fselect" id="f-grape" onchange="onFormChange()">
+     <option value="">Choisir…</option>
+     <option>Cabernet Sauvignon</option><option>Merlot</option><option>Pinot Noir</option>
+     <option>Syrah / Shiraz</option><option>Grenache</option><option>Nebbiolo</option>
+     <option>Sangiovese</option><option>Tempranillo</option><option>Malbec</option>
+     <option>Chardonnay</option><option>Riesling</option><option>Sauvignon Blanc</option>
+     <option>Chenin Blanc</option><option>Viognier</option><option>Sémillon</option>
+     <option>Pinot Gris</option><option>Autre</option>
+    </select>
+   </div>
+   <div class="frow"><span class="flbl">Classement</span>
+    <select class="fselect" id="f-rank" onchange="onFormChange()">
+     <option value="generic">Régional</option><option value="village">Village</option>
+     <option value="premier_cru">Premier Cru</option><option value="grand_cru">Grand Cru</option>
+     <option value="icon">Iconique</option>
+    </select>
+   </div>
+  </div>
+  <div class="fsec">
+   <div class="frow"><span class="flbl">Millésime</span><input class="finput" id="f-vintage" type="number" placeholder="2020" oninput="onFormChange()"></div>
+   <div class="frow"><span class="flbl">Note /100</span><input class="finput" id="f-rating" type="number" placeholder="90" oninput="onFormChange()"></div>
+  </div>
+  <div class="fsec">
+   <div class="frow"><span class="flbl">Prix SAQ ($)</span><input class="finput" id="f-saq" type="number" placeholder="0.00"></div>
+   <div class="frow"><span class="flbl">Valeur actuelle ($)</span><input class="finput" id="f-val" type="number" placeholder="Auto"></div>
+  </div>
+  <div class="auto-box" id="auto-box">
+   <div class="auto-title">🤖 Apogée calculée</div>
+   <div class="auto-result" id="auto-result">—</div>
+   <div class="auto-detail" id="auto-detail"></div>
+  </div>
+  <div class="override-row hidden" id="override-row" onclick="toggleOverride()">
+   <span style="font-size:14px;font-weight:500;color:#111">Corriger manuellement</span>
+   <div class="toggle" id="override-toggle"><div class="toggle-dot"></div></div>
+  </div>
+  <div class="hidden" id="manual-ov">
+   <div class="fsec">
+    <div class="frow"><span class="flbl">Début apogée</span><input class="finput" id="f-astart" type="number" placeholder="2028"></div>
+    <div class="frow"><span class="flbl">Fin apogée</span><input class="finput" id="f-aend" type="number" placeholder="2038"></div>
+   </div>
+  </div>
+  <textarea class="ftextarea" id="f-notes" placeholder="Notes de dégustation…" rows="3"></textarea>
+  <button class="sh-btn" id="aw-submit" onclick="submitWine()">Ajouter à ma cave</button>
+  <button class="sh-btn danger hidden" id="aw-delete" onclick="deleteWine()" style="margin-top:8px">Supprimer ce vin</button>
+  <div style="height:8px"></div>
+ </div>
+</div>
+
+<!-- PLACEMENT PICKER SHEET -->
+<div class="overlay hidden" id="place-overlay" onclick="if(event.target===this)closePlacement()">
+ <div class="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-head">
+   <div class="sh-title" id="place-title">Placer les bouteilles</div>
+   <button class="sh-close" onclick="closePlacement()">✕</button>
+  </div>
+  <!-- Remaining badge -->
+  <div class="remaining-badge" id="remaining-badge">
+   <div class="rb-icon">📦</div>
+   <div><div class="rb-text" id="rb-text">3 bouteilles à placer</div><div class="rb-sub" id="rb-sub">Choisissez les rangées</div></div>
+  </div>
+  <!-- Current placements summary -->
+  <div id="place-summary" class="hidden">
+   <div style="padding:0 16px 4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#BBB">Placements en cours</div>
+   <div class="placement-summary" id="place-summary-rows"></div>
+  </div>
+  <!-- Rows list -->
+  <div id="place-rows-list"></div>
+  <!-- Confirm -->
+  <button class="sh-btn" id="place-confirm-btn" onclick="confirmPlacements()" style="margin-top:8px">Confirmer les placements</button>
+  <button class="sh-btn ghost" onclick="closePlacement()" style="margin-top:8px">Annuler</button>
+  <div style="height:8px"></div>
+ </div>
+</div>
+
+<!-- WITHDRAW SHEET -->
+<div class="overlay hidden" id="withdraw-overlay" onclick="if(event.target===this)closeWithdraw()">
+ <div class="sheet">
+  <div class="sh-handle"></div>
+  <div class="sh-head">
+   <div class="sh-title">Retirer des bouteilles</div>
+   <button class="sh-close" onclick="closeWithdraw()">✕</button>
+  </div>
+  <div id="withdraw-rows"></div>
+  <button class="sh-btn ghost" onclick="closeWithdraw()" style="margin-top:8px">Fermer</button>
+  <div style="height:8px"></div>
+ </div>
+</div>
+
+<!-- SECTION SHEET -->
+<div class="overlay hidden" id="sec-overlay" onclick="if(event.target===this)closeAddSection()">
+ <div class="sheet" style="max-height:60vh">
+  <div class="sh-handle"></div>
+  <div class="sh-head">
+   <div class="sh-title" id="sec-title">Nouvelle section</div>
+   <button class="sh-close" onclick="closeAddSection()">✕</button>
+  </div>
+  <div class="fsec">
+   <div class="frow"><span class="flbl">Nom</span><input class="finput" id="f-sec-name" placeholder="Ex: Section A, Frigo…"></div>
+  </div>
+  <button class="sh-btn" id="sec-submit" onclick="submitSection()">Créer</button>
+  <button class="sh-btn danger hidden" id="sec-delete" onclick="deleteSection()" style="margin-top:8px">Supprimer</button>
+  <div style="height:8px"></div>
+ </div>
+</div>
+
+<!-- ROW SHEET -->
+<div class="overlay hidden" id="row-overlay" onclick="if(event.target===this)closeAddRow()">
+ <div class="sheet" style="max-height:60vh">
+  <div class="sh-handle"></div>
+  <div class="sh-head">
+   <div class="sh-title" id="row-title">Nouvelle rangée</div>
+   <button class="sh-close" onclick="closeAddRow()">✕</button>
+  </div>
+  <div class="fsec">
+   <div class="frow"><span class="flbl">Nom</span><input class="finput" id="f-row-name" placeholder="Ex: Rangée 1, Bas…"></div>
+   <div class="frow"><span class="flbl">Capacité (btl)</span><input class="finput" id="f-row-cap" type="number" placeholder="12" min="1"></div>
+  </div>
+  <button class="sh-btn" id="row-submit" onclick="submitRow()">Créer</button>
+  <button class="sh-btn danger hidden" id="row-delete" onclick="deleteRow()" style="margin-top:8px">Supprimer</button>
+  <div style="height:8px"></div>
+ </div>
+</div>
+
+<!-- SCANNER -->
+<div class="scanner-view hidden" id="scanner-view">
+ <div class="scanner-vf">
+  <video id="scanner-video" autoplay playsinline muted></video>
+  <div class="vf-overlay">
+   <div class="vf-counter hidden" id="vf-counter">0 / 0</div>
+   <div class="vf-frame">
+    <div class="vf-corner vf-tl"></div><div class="vf-corner vf-tr"></div>
+    <div class="vf-corner vf-bl"></div><div class="vf-corner vf-br"></div>
+    <div class="vf-line"></div>
+   </div>
+   <div class="vf-status" id="vf-status">Pointez vers le code-barres SAQ</div>
+  </div>
+ </div>
+ <div class="scanner-bottom">
+  <div class="scanner-hint" id="scan-hint">Code-barres EAN-13 sur l'étiquette ou la bouteille</div>
+  <div id="scan-scanned-list" class="scan-scanned-list hidden"></div>
+  <div class="scan-manual-row">
+   <input id="scan-manual" type="number" placeholder="Entrer le code manuellement…">
+   <button onclick="lookupManual()">OK</button>
+  </div>
+  <button class="scan-cancel" onclick="closeScanner()">Annuler</button>
+ </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="bottom-nav">
+ <button class="nav-btn active" onclick="showMain()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+  Cave
+ </button>
+ <button class="nav-btn" onclick="openCaveView()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+  Gérer
+ </button>
+ <button class="nav-btn" onclick="alert('Statistiques — bientôt disponible')">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+  Stats
+ </button>
+</div>
+
+</div><!-- #app -->
+
+<script>
+// ════════════════════════════════════════════════════
+// DATA MODEL
+// wines      : [{id, name, region, appellation, type, grapes, rank, vintage, rating, saqPrice, currentValue, notes, apogeeStart, apogeeEnd, autoCalc, ...}]
+// sections   : [{id, name, rows:[{id, name, capacity}]}]
+// placements : [{id, wineId, sectionId, rowId, quantity}]
+// ════════════════════════════════════════════════════
+let wines=[], sections=[], placements=[];
+
+function save(){
+  localStorage.setItem('cv_wines',      JSON.stringify(wines));
+  localStorage.setItem('cv_sections',   JSON.stringify(sections));
+  localStorage.setItem('cv_placements', JSON.stringify(placements));
+}
+function load(){
+  try{wines=     JSON.parse(localStorage.getItem('cv_wines'))      ||[];}catch{wines=[];}
+  try{sections=  JSON.parse(localStorage.getItem('cv_sections'))   ||[];}catch{sections=[];}
+  try{placements=JSON.parse(localStorage.getItem('cv_placements')) ||[];}catch{placements=[];}
+}
+
+// ════ PLACEMENT HELPERS ════
+function placementsForWine(wineId){ return placements.filter(p=>p.wineId===wineId); }
+function placementsForRow(secId,rowId){ return placements.filter(p=>p.sectionId===secId&&p.rowId===rowId); }
+function rowUsed(secId,rowId){ return placementsForRow(secId,rowId).reduce((s,p)=>s+p.quantity,0); }
+function rowFree(secId,rowId){ const r=getRow(secId,rowId); return r?(r.capacity-rowUsed(secId,rowId)):9999; }
+function wineTotal(wineId){ return placementsForWine(wineId).reduce((s,p)=>s+p.quantity,0); }
+function getSection(id){ return sections.find(s=>s.id===id); }
+function getRow(secId,rowId){ const s=getSection(secId); return s?s.rows.find(r=>r.id===rowId):null; }
+function locLabel(wineId){
+  const ps=placementsForWine(wineId); if(!ps.length) return null;
+  return ps.map(p=>{
+    const s=getSection(p.sectionId), r=getRow(p.sectionId,p.rowId);
+    return `${s?s.name:'?'} · ${r?r.name:'?'} ×${p.quantity}`;
+  }).join('  |  ');
+}
+
+// ════ APOGÉE ENGINE ════
+const VS={
+  "Bordeaux":{1982:100,1986:92,1989:98,1990:98,1995:90,1996:93,2000:97,2005:98,2009:100,2010:100,2015:97,2016:99,2018:97,2019:98,2020:95,2021:88,2022:97},
+  "Bourgogne":{1990:99,1993:88,1995:96,1996:97,1999:96,2002:95,2005:98,2009:96,2010:98,2012:92,2015:96,2017:95,2018:97,2019:96,2020:94,2021:91,2022:95},
+  "Champagne":{1996:98,2002:97,2004:92,2006:93,2008:97,2012:96,2013:91,2015:96,2018:95},
+  "Rhône":{1989:98,1990:99,1995:94,1998:96,1999:95,2003:90,2007:97,2009:97,2010:97,2015:96,2016:95,2019:96,2020:93},
+  "Loire":{1989:95,1995:96,2002:91,2005:96,2008:93,2009:93,2014:95,2015:93,2018:94,2020:93},
+  "Alsace":{1989:96,1990:95,1997:95,2001:94,2007:95,2015:95,2017:94,2019:94},
+  "Toscane":{1985:98,1988:97,1990:99,1995:95,1997:99,1999:96,2004:97,2010:99,2013:95,2015:97,2016:98,2019:97,2020:95},
+  "Piémont":{1989:97,1990:99,1996:98,1997:97,1999:94,2001:97,2004:97,2008:96,2010:97,2013:95,2016:99,2019:96},
+  "Espagne":{1994:96,1995:96,2001:97,2004:96,2005:95,2010:95,2016:96,2019:95},
+  "Australie":{1990:95,1994:96,1998:97,2004:96,2008:94,2014:93,2016:95,2018:94},
+  "Californie":{1997:97,2001:96,2007:93,2012:97,2014:96,2016:95,2018:96,2019:97},
+  "Argentine":{1999:95,2006:95,2009:96,2016:95,2017:96,2019:95},
+};
+const GB={"Cabernet Sauvignon":[10,25],"Merlot":[7,18],"Pinot Noir":[7,18],"Syrah / Shiraz":[8,22],"Grenache":[6,15],"Nebbiolo":[12,28],"Sangiovese":[8,20],"Tempranillo":[7,18],"Malbec":[6,14],"Chardonnay":[5,14],"Riesling":[8,25],"Sauvignon Blanc":[3,7],"Chenin Blanc":[8,30],"Viognier":[3,7],"Sémillon":[8,25],"Pinot Gris":[4,10],"Autre":[6,14]};
+const TB={champagne:[5,18],rosé:[1,3],doux:[15,50]};
+const RM={generic:1.0,village:1.25,premier_cru:1.55,grand_cru:2.0,icon:2.6};
+const RL={generic:"Régional",village:"Village",premier_cru:"1er Cru",grand_cru:"Grand Cru",icon:"Iconique"};
+function viInfo(region,vintage){
+  const sc=VS[region];if(!sc)return{bonus:1.0,label:"Région inconnue",color:"#999"};
+  const yrs=Object.keys(sc).map(Number),cl=yrs.reduce((a,b)=>Math.abs(b-vintage)<Math.abs(a-vintage)?b:a);
+  if(Math.abs(cl-vintage)>3)return{bonus:1.0,label:"Non répertorié",color:"#999"};
+  const s=sc[cl];
+  if(s>=97)return{bonus:1.35,label:`Exceptionnel (${s}/100)`,color:"#1E9E5E"};
+  if(s>=93)return{bonus:1.15,label:`Grand millésime (${s}/100)`,color:"#5AAA7A"};
+  if(s>=88)return{bonus:1.0,label:`Bon millésime (${s}/100)`,color:"#C9843A"};
+  if(s>=83)return{bonus:0.85,label:`Correct (${s}/100)`,color:"#C08030"};
+  return{bonus:0.7,label:`Difficile (${s}/100)`,color:"#D04040"};
+}
+function riInfo(r){
+  if(!r||r<50)return{bonus:1.0,label:"Non renseignée"};
+  if(r>=98)return{bonus:1.3,label:`Légendaire ${r}/100`};
+  if(r>=95)return{bonus:1.15,label:`Exceptionnel ${r}/100`};
+  if(r>=90)return{bonus:1.0,label:`Très bon ${r}/100`};
+  if(r>=85)return{bonus:0.9,label:`Honnête ${r}/100`};
+  return{bonus:0.8,label:`Modeste ${r}/100`};
+}
+function calcApogee(region,type,grape,rank,vintage,rating){
+  const rm=RM[rank]||1.0,vi=viInfo(region,vintage),ri=riInfo(rating),mult=rm*vi.bonus*ri.bonus;
+  const base=TB[type]||(GB[grape]||GB["Autre"]);
+  const ok=!vi.label.includes("inconnue")&&!vi.label.includes("répertorié")&&grape&&rank!=="generic";
+  return{apogeeStart:Math.round(vintage+base[0]*mult),apogeeEnd:Math.round(vintage+base[1]*mult),
+    totalMult:mult,autoCalc:true,confLabel:ok?"Fiable":"Estimé",
+    factors:[{label:"Cépage",value:grape||type,color:"#555"},{label:"Classement",value:`${RL[rank]} ×${rm.toFixed(2)}`,color:"#555"},{label:"Millésime",value:vi.label,color:vi.color},{label:"Note",value:ri.label,color:"#555"}]};
+}
+
+// ════ APOGÉE STATUS ════
+const TE={rouge:"🍷",blanc:"🥂",champagne:"🍾",rosé:"🌸",doux:"🍯"};
+const TC={rouge:"#8B2020",blanc:"#B8972A",champagne:"#A0783C",rosé:"#C06080",doux:"#7A5C28"};
+function apStat(w){
+  const now=new Date().getFullYear();
+  if(now<w.apogeeStart){const y=w.apogeeStart-now;return{cls:"wait",label:`Dans ${y} an${y>1?"s":""}`,color:"#999"};}
+  if(now>w.apogeeEnd)return{cls:"decline",label:"Passé",color:"#D04040"};
+  const p=(now-w.apogeeStart)/(w.apogeeEnd-w.apogeeStart);
+  if(p<0.3)return{cls:"early",label:"Début apogée",color:"#2060D0"};
+  if(p<0.7)return{cls:"peak",label:"Pleine apogée !",color:"#1E9E5E"};
+  return{cls:"soon",label:"À boire bientôt",color:"#C98000"};
+}
+
+// ════ RENDER LIST ════
+let curSort="apogee",curType="tous",scrollPos=0,curWineId=null;
+function apScore(w){const ap=apStat(w),now=new Date().getFullYear();if(ap.cls==="peak")return 0;if(ap.cls==="soon")return 1;if(ap.cls==="early")return 2+(w.apogeeStart-now);if(ap.cls==="wait")return 10+(w.apogeeStart-now);return 100+(now-w.apogeeEnd);}
+function getSorted(){
+  let l=[...wines];if(curType!=="tous")l=l.filter(w=>w.type===curType);
+  if(curSort==="apogee")l.sort((a,b)=>apScore(a)-apScore(b));
+  else if(curSort==="price_asc")l.sort((a,b)=>(a.saqPrice||0)-(b.saqPrice||0));
+  else if(curSort==="price_desc")l.sort((a,b)=>(b.saqPrice||0)-(a.saqPrice||0));
+  else if(curSort==="rating")l.sort((a,b)=>(b.rating||0)-(a.rating||0));
+  else if(curSort==="region")l.sort((a,b)=>(a.region||"").localeCompare(b.region||""));
+  else if(curSort==="section")l.sort((a,b)=>{const pa=placementsForWine(a.id)[0],pb=placementsForWine(b.id)[0];return(pa?pa.sectionId:"zzz").localeCompare(pb?pb.sectionId:"zzz");});
+  return l;
+}
+function renderList(){
+  const l=getSorted();
+  const total=wines.reduce((s,w)=>s+wineTotal(w.id),0);
+  const totalVal=wines.reduce((s,w)=>s+(w.currentValue||w.saqPrice||0)*wineTotal(w.id),0);
+  document.getElementById('header-sub').textContent=total===0?"Cave vide":`${total} bouteille${total>1?"s":""} · ${totalVal.toLocaleString('fr-CA')} $`;
+  if(!l.length){
+    document.getElementById('wine-list').innerHTML=`<div class="empty-state"><div class="empty-icon">🍾</div><div class="empty-title">${wines.length===0?"Votre cave est vide":"Aucun résultat"}</div><div class="empty-sub">${wines.length===0?"Ajoutez votre premier vin en appuyant sur +":"Essayez un autre filtre"}</div>${wines.length===0?`<button class="empty-cta" onclick="openAddWine()">+ Ajouter un vin</button>`:""}</div>`;
+    return;
+  }
+  document.getElementById('wine-list').innerHTML=l.map(w=>{
+    const ap=apStat(w),tot=wineTotal(w.id),cv=w.currentValue||w.saqPrice||0,diff=cv-(w.saqPrice||0),pct=w.saqPrice>0?Math.round(diff/w.saqPrice*100):0,loc=locLabel(w.id);
+    return `<div class="wine-card" onclick="openDetail(${w.id})">
+      <div class="card-left" style="background:${TC[w.type]||'#8B2020'}12">${tot>1?`<div class="card-qty-badge">${tot}</div>`:''}<div class="card-bottle">${TE[w.type]||'🍷'}</div></div>
+      <div class="card-body">
+        <div><div class="card-vintage">${w.vintage||''} · ${w.region||''}</div><div class="card-name">${w.name}</div><div class="card-meta">${w.appellation||''}</div></div>
+        <div class="card-pills">
+          <div class="pill pill-ap ${ap.cls}">${ap.label} · ${w.apogeeStart}–${w.apogeeEnd}</div>
+          ${loc?`<div class="pill pill-loc">📦 ${loc}</div>`:''}
+          ${w.saqPrice?`<div class="pill pill-price">🏷 ${w.saqPrice.toLocaleString('fr-CA')} $</div>`:''}
+          ${cv&&w.saqPrice?`<div class="pill ${diff>=0?'pill-gain':'pill-loss'}">${diff>=0?'📈':'📉'} ${cv.toLocaleString('fr-CA')} $ (${diff>=0?'+':''}${pct}%)</div>`:''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════ DETAIL ════
+function openDetail(id){
+  scrollPos=window.scrollY; curWineId=id;
+  const w=wines.find(x=>x.id===id); if(!w)return;
+  const ap=apStat(w),now=new Date().getFullYear(),cv=w.currentValue||w.saqPrice||0,diff=cv-(w.saqPrice||0),pct=w.saqPrice>0?Math.round(diff/w.saqPrice*100):0;
+  const tot=wineTotal(w.id);
+  const barEnd=w.apogeeEnd+4,barTotal=barEnd-w.vintage;
+  const sp=((w.apogeeStart-w.vintage)/barTotal*100).toFixed(1),ep=((w.apogeeEnd-w.vintage)/barTotal*100).toFixed(1),np=(Math.min(Math.max(now-w.vintage,0),barTotal)/barTotal*100).toFixed(1);
+  const dc={peak:"#2DB87A",soon:"#F4A827",early:"#5BAEF7",wait:"#BBBBBB",decline:"#E05252"}[ap.cls];
+
+  // Build placements section
+  const ps=placementsForWine(w.id);
+  const placeHTML=`
+    <div class="d-sec">
+      <div class="d-lbl">Emplacements dans la cave (${tot} btl)</div>
+      ${ps.length===0?`<div style="font-size:14px;color:#BBB;padding:4px 0">Aucun emplacement défini</div>`:''}
+      ${ps.map(p=>{
+        const s=getSection(p.sectionId),r=getRow(p.sectionId,p.rowId);
+        return `<div class="place-row">
+          <div class="place-row-info"><div class="place-row-name">${s?s.name:'?'} · ${r?r.name:'?'}</div><div class="place-row-sec">${r?r.capacity-rowUsed(p.sectionId,p.rowId)+p.quantity:0} places libres après retrait</div></div>
+          <div class="place-row-btns">
+            <span class="place-row-qty">${p.quantity}</span>
+            <button class="withdraw-btn" onclick="openWithdrawFromPlacement(${w.id},'${p.id}')">Retirer</button>
+          </div>
+        </div>`;
+      }).join('')}
+      <button class="add-place-btn" onclick="openPlacementPicker(${w.id},0)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ajouter un emplacement
+      </button>
+    </div>`;
+
+  document.getElementById('detail-title').textContent=`${w.vintage||''} · ${(w.name||'').split(' ').slice(0,3).join(' ')}`;
+  document.getElementById('detail-body').innerHTML=`
+    <div class="d-hero" style="background:${TC[w.type]||'#8B2020'}10">${TE[w.type]||'🍷'}</div>
+    <div class="d-sec">
+      <div style="font-size:13px;font-weight:700;color:#C9843A;margin-bottom:4px">${w.vintage||''} · ${w.region||''}${w.appellation?' · '+w.appellation:''}</div>
+      <div style="font-size:21px;font-weight:800;color:#111;line-height:1.2;margin-bottom:4px">${w.name}</div>
+      <div style="font-size:13px;color:#999">${w.grapes||''} · ${RL[w.rank]||''}</div>
+    </div>
+    <div class="d-sec">
+      <div class="d-lbl">Apogée</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><div style="width:10px;height:10px;border-radius:50%;background:${dc};flex-shrink:0"></div><div style="font-size:15px;font-weight:700;color:${dc}">${ap.label}</div></div>
+      <div class="apbar-lbls"><span>${w.vintage}</span><span style="color:#C9843A;font-weight:700">${w.apogeeStart} – ${w.apogeeEnd}</span><span>${barEnd}</span></div>
+      <div class="apbar-track"><div style="position:absolute;left:${sp}%;width:${ep-sp}%;height:100%;background:${dc}35;border-radius:4px"></div><div style="position:absolute;left:${np}%;width:2px;height:100%;background:#111;transform:translateX(-50%)"></div></div>
+      ${w.autoCalc&&w.factors?`<div class="engine-box" style="margin-top:10px"><div class="eng-lbl">🤖 ${w.confLabel||'Calcul auto'}</div>${w.factors.map(f=>`<div class="eng-row"><span class="eng-f">${f.label}</span><span class="eng-v" style="color:${f.color||'#555'}">${f.value}</span></div>`).join('')}<div class="eng-row" style="margin-top:6px;border-top:1px solid #C0E8D0;padding-top:6px"><span class="eng-f" style="font-weight:700;color:#3A8A5A">Multiplicateur</span><span class="eng-v">×${(w.totalMult||1).toFixed(2)}</span></div></div>`:''}
+    </div>
+    ${placeHTML}
+    <div class="d-sec">
+      <div class="d-lbl">Prix & Valeur</div>
+      ${w.saqPrice?`<div class="d-row"><span class="d-rl">Prix SAQ</span><span class="d-rv">${w.saqPrice.toLocaleString('fr-CA')} $</span></div>`:''}
+      ${cv?`<div class="d-row"><span class="d-rl">Valeur actuelle / btl</span><span class="d-rv ${diff>=0?'green':'red'}">${cv.toLocaleString('fr-CA')} $ (${diff>=0?'+':''}${pct}%)</span></div>`:''}
+      ${tot>1&&cv?`<div class="d-row"><span class="d-rl">Valeur totale (${tot} btl)</span><span class="d-rv gold">${(cv*tot).toLocaleString('fr-CA')} $</span></div>`:''}
+      ${tot>1&&w.saqPrice?`<div class="d-row"><span class="d-rl">Plus-value totale</span><span class="d-rv ${diff>=0?'green':'red'}">${diff>=0?'+':''}${((cv-w.saqPrice)*tot).toLocaleString('fr-CA')} $</span></div>`:''}
+    </div>
+    <div class="d-sec"><div class="d-lbl">Détails</div>
+      <div class="d-row"><span class="d-rl">Quantité en cave</span><span class="d-rv">${tot} btl</span></div>
+      ${w.rating?`<div class="d-row"><span class="d-rl">Note</span><span class="d-rv gold">★ ${w.rating}/100</span></div>`:''}
+    </div>
+    ${w.notes?`<div class="d-sec"><div class="d-lbl">Notes</div><div style="font-size:14px;color:#555;line-height:1.6">${w.notes}</div></div>`:''}
+    <div style="height:30px"></div>`;
+  document.getElementById('detail-view').classList.add('open');
+  document.getElementById('detail-view').scrollTop=0;
+}
+function closeDetail(){document.getElementById('detail-view').classList.remove('open');setTimeout(()=>window.scrollTo({top:scrollPos,behavior:'instant'}),50);}
+function editCurrentWine(){const w=wines.find(x=>x.id===curWineId);if(!w)return;closeDetail();setTimeout(()=>openAddWine(w),320);}
+
+// ════ PLACEMENT PICKER ════
+let pendingPlacement={wineId:null,toPlace:0,placements:[]}; // [{sectionId,rowId,qty}]
+
+function openPlacementPicker(wineId, qty){
+  const w=wines.find(x=>x.id===wineId); if(!w)return;
+  pendingPlacement={wineId, toPlace:qty, placements:[]};
+  document.getElementById('place-title').textContent=`Placer : ${w.name}`;
+  renderPlacementPicker();
+  document.getElementById('place-overlay').classList.remove('hidden');
+}
+
+function renderPlacementPicker(){
+  const {wineId, toPlace, placements:pp}=pendingPlacement;
+  const w=wines.find(x=>x.id===wineId);
+  const alreadyPlaced=pp.reduce((s,p)=>s+p.qty,0);
+  const remaining=toPlace-alreadyPlaced;
+
+  // Remaining badge
+  const badge=document.getElementById('remaining-badge');
+  const rbText=document.getElementById('rb-text');
+  const rbSub=document.getElementById('rb-sub');
+  if(toPlace>0){
+    badge.classList.toggle('done',remaining===0);
+    rbText.textContent=remaining>0?`${remaining} bouteille${remaining>1?'s':''} restante${remaining>1?'s':''} à placer`:`Toutes les bouteilles sont placées ✓`;
+    rbSub.textContent=remaining>0?`${alreadyPlaced} / ${toPlace} placées`:'Confirmez pour valider';
+  } else {
+    badge.innerHTML='<div class="rb-icon">📍</div><div><div class="rb-text">Ajouter un emplacement</div><div class="rb-sub">Choisissez une rangée disponible</div></div>';
+  }
+
+  // Summary
+  const sumDiv=document.getElementById('place-summary');
+  const sumRows=document.getElementById('place-summary-rows');
+  if(pp.length>0){
+    sumDiv.classList.remove('hidden');
+    sumRows.innerHTML=pp.map((p,i)=>{
+      const s=getSection(p.sectionId),r=getRow(p.sectionId,p.rowId);
+      return `<div class="ps-row">
+        <div class="ps-left"><div class="ps-loc">${s?s.name:'?'} · ${r?r.name:'?'}</div><div class="ps-detail">${p.qty} bouteille${p.qty>1?'s':''}</div></div>
+        <button class="ps-remove" onclick="removePendingPlacement(${i})">✕</button>
+      </div>`;
+    }).join('');
+  } else { sumDiv.classList.add('hidden'); }
+
+  // Rows list
+  let html='';
+  if(!sections.length){
+    html=`<div style="padding:24px;text-align:center;color:#999;font-size:14px">Aucune section définie.<br>Créez des sections dans l'onglet Gérer.</div>`;
+  } else {
+    sections.forEach(sec=>{
+      html+=`<div class="place-section-hdr">${sec.name}</div>`;
+      if(!sec.rows.length){ html+=`<div style="padding:8px 16px;font-size:13px;color:#CCC">Aucune rangée — ajoutez-en dans Gérer</div>`; return; }
+      sec.rows.forEach(row=>{
+        const used=rowUsed(sec.id,row.id);
+        const pendingInRow=pp.filter(p=>p.sectionId===sec.id&&p.rowId===row.id).reduce((s,p)=>s+p.qty,0);
+        const effectiveUsed=used+pendingInRow;
+        const free=row.capacity-effectiveUsed;
+        const pct=Math.round(effectiveUsed/row.capacity*100);
+        const isFull=free<=0;
+        const fillCls=pct>=100?'full':pct>=80?'warn':'';
+        // Does this row already have this wine?
+        const existingPl=placements.find(p=>p.wineId===wineId&&p.sectionId===sec.id&&p.rowId===row.id);
+        const hasWine=!!existingPl;
+        html+=`<div class="place-row-option${hasWine?' has-wine':''}${isFull?' full':''}" onclick="selectRowForPlacement('${sec.id}','${row.id}')">
+          <div class="pro-left">
+            <div class="pro-name">${row.name}</div>
+            <div class="pro-detail">${effectiveUsed} / ${row.capacity} btl utilisées</div>
+            ${hasWine?`<div class="pro-wine-badge">⭐ ${existingPl.quantity} btl de ce vin ici</div>`:''}
+            <div class="fill-bar"><div class="fill-inner ${fillCls}" style="width:${Math.min(100,pct)}%"></div></div>
+          </div>
+          <div class="pro-right">
+            <div class="pro-free ${free===0?'none':free<=2?'warn':''}">${free}</div>
+            <div class="pro-free-lbl">libre${free>1?'s':''}</div>
+          </div>
+        </div>`;
+      });
+    });
+  }
+  document.getElementById('place-rows-list').innerHTML=html;
+
+  // Confirm button
+  const canConfirm=pp.length>0&&(toPlace===0||remaining===0);
+  document.getElementById('place-confirm-btn').disabled=!canConfirm;
+  document.getElementById('place-confirm-btn').style.opacity=canConfirm?'1':'0.4';
+}
+
+function selectRowForPlacement(secId,rowId){
+  const {wineId,placements:pp,toPlace}=pendingPlacement;
+  const alreadyPlaced=pp.reduce((s,p)=>s+p.qty,0);
+  const remaining=toPlace-alreadyPlaced;
+  const free=rowFree(secId,rowId)-pp.filter(p=>p.sectionId===secId&&p.rowId===rowId).reduce((s,p)=>s+p.qty,0);
+  if(free<=0)return;
+
+  // If toPlace=0 (just adding placement), always add 1
+  const addQty=toPlace===0?1:Math.min(remaining,free);
+  if(addQty<=0)return;
+
+  // Check if already in pending for this row
+  const existing=pp.find(p=>p.sectionId===secId&&p.rowId===rowId);
+  if(existing){ existing.qty+=addQty; }
+  else { pp.push({sectionId:secId,rowId:rowId,qty:addQty}); }
+  renderPlacementPicker();
+}
+
+function removePendingPlacement(idx){
+  pendingPlacement.placements.splice(idx,1);
+  renderPlacementPicker();
+}
+
+function confirmPlacements(){
+  const {wineId,placements:pp}=pendingPlacement;
+  pp.forEach(p=>{
+    const existing=placements.find(x=>x.wineId===wineId&&x.sectionId===p.sectionId&&x.rowId===p.rowId);
+    if(existing){ existing.quantity+=p.qty; }
+    else { placements.push({id:'pl'+Date.now()+Math.random(),wineId,sectionId:p.sectionId,rowId:p.rowId,quantity:p.qty}); }
+  });
+  save(); closePlacement();
+  // Re-open detail if we came from there
+  if(curWineId===wineId){ openDetail(wineId); } else { renderList(); }
+}
+function closePlacement(){ document.getElementById('place-overlay').classList.add('hidden'); }
+
+// ════ WITHDRAW ════
+function openWithdrawFromPlacement(wineId,placementId){
+  const w=wines.find(x=>x.id===wineId); if(!w)return;
+  const p=placements.find(x=>x.id===placementId); if(!p)return;
+  const s=getSection(p.sectionId),r=getRow(p.sectionId,p.rowId);
+  document.getElementById('withdraw-rows').innerHTML=`
+    <div style="padding:0 16px 8px;font-size:13px;color:#888">Rangée : <strong style="color:#111">${s?s.name:''} · ${r?r.name:''}</strong> — ${p.quantity} btl de ce vin</div>
+    <div class="fsec" style="margin-bottom:0">
+      ${Array.from({length:p.quantity},(_,i)=>i+1).map(n=>`
+        <div class="frow"><span class="flbl">Retirer ${n} btl</span>
+          <button onclick="doWithdraw('${placementId}',${n})" style="background:${n===1?'#FEF0F0':'#FEE8E8'};border:none;border-radius:10px;color:#D04040;font-size:13px;font-weight:700;padding:7px 14px;cursor:pointer">${n} bouteille${n>1?'s':''}</button>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('withdraw-overlay').classList.remove('hidden');
+}
+function doWithdraw(placementId,qty){
+  const p=placements.find(x=>x.id===placementId); if(!p)return;
+  p.quantity-=qty;
+  if(p.quantity<=0) placements=placements.filter(x=>x.id!==placementId);
+  save(); closeWithdraw();
+  if(curWineId) openDetail(curWineId);
+  renderList();
+}
+function closeWithdraw(){ document.getElementById('withdraw-overlay').classList.add('hidden'); }
+
+// ════ ADD / EDIT WINE ════
+let editingWineId=null,overrideEnabled=false,lastCalc=null;
+function openAddWine(wine=null){
+  editingWineId=wine?wine.id:null; overrideEnabled=false; lastCalc=null;
+  document.getElementById('override-toggle').classList.remove('on');
+  document.getElementById('manual-ov').classList.add('hidden');
+  document.getElementById('auto-box').style.display='none';
+  document.getElementById('override-row').classList.add('hidden');
+  document.getElementById('saq-banner').classList.add('hidden');
+  document.getElementById('aw-title').textContent=wine?'Modifier le vin':'Ajouter un vin';
+  document.getElementById('aw-submit').textContent=wine?'Enregistrer':'Ajouter à ma cave';
+  document.getElementById('aw-delete').classList.toggle('hidden',!wine);
+  ['f-name','f-appel','f-vintage','f-rating','f-saq','f-val','f-notes','f-astart','f-aend'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('f-region').value=''; document.getElementById('f-type').value='rouge';
+  document.getElementById('f-grape').value=''; document.getElementById('f-rank').value='generic';
+  if(wine){
+    document.getElementById('f-name').value=wine.name||'';
+    document.getElementById('f-region').value=wine.region||'';
+    document.getElementById('f-appel').value=wine.appellation||'';
+    document.getElementById('f-type').value=wine.type||'rouge';
+    document.getElementById('f-grape').value=wine.grapes||'';
+    document.getElementById('f-rank').value=wine.rank||'generic';
+    document.getElementById('f-vintage').value=wine.vintage||'';
+    document.getElementById('f-rating').value=wine.rating||'';
+    document.getElementById('f-saq').value=wine.saqPrice||'';
+    document.getElementById('f-val').value=wine.currentValue||'';
+    document.getElementById('f-notes').value=wine.notes||'';
+    onFormChange();
+  }
+  document.getElementById('add-wine-overlay').classList.remove('hidden');
+}
+function closeAddWine(){ document.getElementById('add-wine-overlay').classList.add('hidden'); editingWineId=null; }
+function onFormChange(){
+  const region=document.getElementById('f-region').value,type=document.getElementById('f-type').value,grape=document.getElementById('f-grape').value,rank=document.getElementById('f-rank').value,vintage=parseInt(document.getElementById('f-vintage').value),rating=parseInt(document.getElementById('f-rating').value);
+  if(!region||!vintage||vintage<1900||vintage>2025){document.getElementById('auto-box').style.display='none';document.getElementById('override-row').classList.add('hidden');lastCalc=null;return;}
+  lastCalc=calcApogee(region,type,grape,rank,vintage,rating);
+  document.getElementById('auto-result').textContent=`${lastCalc.apogeeStart} – ${lastCalc.apogeeEnd}`;
+  document.getElementById('auto-detail').innerHTML=lastCalc.factors.map(f=>`• ${f.label} : ${f.value}`).join('<br>');
+  document.getElementById('auto-box').style.display='block';
+  document.getElementById('override-row').classList.remove('hidden');
+  if(!overrideEnabled){document.getElementById('f-astart').value=lastCalc.apogeeStart;document.getElementById('f-aend').value=lastCalc.apogeeEnd;}
+}
+function toggleOverride(){overrideEnabled=!overrideEnabled;document.getElementById('override-toggle').classList.toggle('on',overrideEnabled);document.getElementById('manual-ov').classList.toggle('hidden',!overrideEnabled);}
+function submitWine(){
+  const vintage=parseInt(document.getElementById('f-vintage').value)||new Date().getFullYear();
+  const saqPrice=parseFloat(document.getElementById('f-saq').value)||0;
+  const cvRaw=document.getElementById('f-val').value;
+  const currentValue=cvRaw?parseFloat(cvRaw):saqPrice;
+  let apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult;
+  if(overrideEnabled){apogeeStart=parseInt(document.getElementById('f-astart').value)||vintage+8;apogeeEnd=parseInt(document.getElementById('f-aend').value)||vintage+18;autoCalc=false;confLabel='Manuel';factors=[];totalMult=1;}
+  else if(lastCalc){({apogeeStart,apogeeEnd,confLabel,factors,totalMult}=lastCalc);autoCalc=true;}
+  else{apogeeStart=vintage+5;apogeeEnd=vintage+15;autoCalc=false;confLabel='Approx';factors=[];totalMult=1;}
+  const wine={id:editingWineId||Date.now(),name:document.getElementById('f-name').value||'Sans nom',region:document.getElementById('f-region').value||'',appellation:document.getElementById('f-appel').value||'',type:document.getElementById('f-type').value,grapes:document.getElementById('f-grape').value||'',rank:document.getElementById('f-rank').value,vintage,rating:parseInt(document.getElementById('f-rating').value)||0,saqPrice,currentValue,notes:document.getElementById('f-notes').value||'',apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult};
+  const isNew=!editingWineId;
+  if(editingWineId){wines=wines.map(w=>w.id===editingWineId?wine:w);}else{wines.unshift(wine);}
+  save(); closeAddWine(); renderList();
+  // After adding a new wine, open placement picker
+  if(isNew && sections.length>0){ setTimeout(()=>openPlacementPicker(wine.id,0),350); }
+}
+function deleteWine(){
+  if(!editingWineId)return;
+  if(!confirm('Supprimer ce vin ?'))return;
+  wines=wines.filter(w=>w.id!==editingWineId);
+  placements=placements.filter(p=>p.wineId!==editingWineId);
+  save();closeAddWine();renderList();
+}
+
+// ════ CAVE MANAGER ════
+let editSecId=null,editRowId=null,editRowSecId=null;
+function openCaveView(){renderCave();document.getElementById('cave-view').classList.add('open');}
+function closeCaveView(){document.getElementById('cave-view').classList.remove('open');}
+function renderCave(){
+  const body=document.getElementById('cave-body');
+  if(!sections.length){body.innerHTML=`<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">Aucune section</div><div class="empty-sub">Appuyez sur + pour créer votre première section</div><button class="empty-cta" onclick="openAddSection()">+ Créer une section</button></div>`;return;}
+  body.innerHTML=sections.map(sec=>{
+    const totCap=sec.rows.reduce((s,r)=>s+r.capacity,0);
+    const totUsed=sec.rows.reduce((s,r)=>s+rowUsed(sec.id,r.id),0);
+    const totFree=totCap-totUsed;
+    const rows=sec.rows.map(row=>{
+      const used=rowUsed(sec.id,row.id),free=row.capacity-used,pct=Math.round(used/row.capacity*100);
+      const fillCls=pct>=100?'fill-inner-sm" style="width:100%;background:#D04040':pct>=80?'fill-inner-sm" style="width:'+pct+'%;background:#F4A827':'fill-inner-sm" style="width:'+pct+'%';
+      // Wines on this row
+      const rowPlacements=placements.filter(p=>p.sectionId===sec.id&&p.rowId===row.id);
+      const wineNames=rowPlacements.map(p=>{const w=wines.find(x=>x.id===p.wineId);return w?`${w.name} (${p.quantity})`:null;}).filter(Boolean).join(', ');
+      return `<div class="cave-row-item">
+        <div style="flex:1"><div class="cri-name">${row.name}</div><div class="cri-cap">${used}/${row.capacity} btl — ${free} libre${free>1?'s':''}</div>${wineNames?`<div style="font-size:11px;color:#C9843A;margin-top:2px">🍷 ${wineNames}</div>`:''}</div>
+        <div class="cri-right"><div class="fill-bar-sm"><div class="${fillCls}"></div></div><button class="icon-btn" onclick="openEditRow('${sec.id}','${row.id}')">✎</button></div>
+      </div>`;
+    }).join('');
+    return `<div class="cave-card">
+      <div class="cave-card-hdr" onclick="toggleCaveSec('${sec.id}')">
+        <div><div class="cave-card-title">${sec.name}</div><div class="cave-card-meta">${sec.rows.length} rangée${sec.rows.length>1?'s':''} · ${totUsed}/${totCap} btl · <span style="color:${totFree===0?'#D04040':totFree<=3?'#C98000':'#1E9E5E'};font-weight:700">${totFree} libre${totFree>1?'s':''}</span></div></div>
+        <div class="cave-card-right"><button class="icon-btn" onclick="event.stopPropagation();openAddRow('${sec.id}')">+ Rangée</button><button class="icon-btn" onclick="event.stopPropagation();openEditSection('${sec.id}')">✎</button><span class="chevron" id="chev-${sec.id}">›</span></div>
+      </div>
+      <div id="rows-${sec.id}" style="display:none">${rows}</div>
+    </div>`;
+  }).join('');
+}
+function toggleCaveSec(id){const el=document.getElementById('rows-'+id),ch=document.getElementById('chev-'+id),open=el.style.display==='none';el.style.display=open?'block':'none';ch.classList.toggle('open',open);}
+function openAddSection(){editSecId=null;document.getElementById('f-sec-name').value='';document.getElementById('sec-title').textContent='Nouvelle section';document.getElementById('sec-delete').classList.add('hidden');document.getElementById('sec-submit').textContent='Créer';document.getElementById('sec-overlay').classList.remove('hidden');}
+function openEditSection(id){editSecId=id;const s=getSection(id);document.getElementById('f-sec-name').value=s?s.name:'';document.getElementById('sec-title').textContent='Modifier la section';document.getElementById('sec-delete').classList.remove('hidden');document.getElementById('sec-submit').textContent='Enregistrer';document.getElementById('sec-overlay').classList.remove('hidden');}
+function closeAddSection(){document.getElementById('sec-overlay').classList.add('hidden');editSecId=null;}
+function submitSection(){const name=document.getElementById('f-sec-name').value.trim();if(!name)return;if(editSecId){const s=getSection(editSecId);if(s)s.name=name;}else{sections.push({id:'s'+Date.now(),name,rows:[]});}save();closeAddSection();renderCave();}
+function deleteSection(){if(!editSecId)return;if(!confirm('Supprimer cette section ?'))return;placements=placements.map(p=>p.sectionId===editSecId?null:p).filter(Boolean);sections=sections.filter(s=>s.id!==editSecId);save();closeAddSection();renderCave();renderList();}
+function openAddRow(secId){editRowId=null;editRowSecId=secId;document.getElementById('f-row-name').value='';document.getElementById('f-row-cap').value='';document.getElementById('row-title').textContent='Nouvelle rangée';document.getElementById('row-delete').classList.add('hidden');document.getElementById('row-submit').textContent='Créer';document.getElementById('row-overlay').classList.remove('hidden');}
+function openEditRow(secId,rowId){editRowSecId=secId;editRowId=rowId;const r=getRow(secId,rowId);document.getElementById('f-row-name').value=r?r.name:'';document.getElementById('f-row-cap').value=r?r.capacity:'';document.getElementById('row-title').textContent='Modifier la rangée';document.getElementById('row-delete').classList.remove('hidden');document.getElementById('row-submit').textContent='Enregistrer';document.getElementById('row-overlay').classList.remove('hidden');}
+function closeAddRow(){document.getElementById('row-overlay').classList.add('hidden');editRowId=null;editRowSecId=null;}
+function submitRow(){const name=document.getElementById('f-row-name').value.trim();if(!name)return;const cap=parseInt(document.getElementById('f-row-cap').value)||0;const sec=getSection(editRowSecId);if(!sec)return;if(editRowId){const r=sec.rows.find(r=>r.id===editRowId);if(r){r.name=name;r.capacity=cap;}}else{sec.rows.push({id:'r'+Date.now(),name,capacity:cap});}save();closeAddRow();renderCave();}
+function deleteRow(){if(!editRowId||!editRowSecId)return;if(!confirm('Supprimer cette rangée ?'))return;placements=placements.filter(p=>p.rowId!==editRowId);const sec=getSection(editRowSecId);if(sec)sec.rows=sec.rows.filter(r=>r.id!==editRowId);save();closeAddRow();renderCave();renderList();}
+
+// ════ SORT / FILTER ════
+function setSort(s,btn){curSort=s;document.querySelectorAll('.sort-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderList();}
+function setType(t,btn){curType=t;document.querySelectorAll('.type-chip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderList();}
+function showMain(){}
+
+// ════ SCANNER ════
+const SAQ_DB={"6942094901055":{name:"Château Margaux",region:"Bordeaux",appellation:"Margaux 1er Cru",type:"rouge",grapes:"Cabernet Sauvignon",rank:"grand_cru",vintage:2018,saqPrice:680,rating:97},"3274080000318":{name:"Mouton Rothschild",region:"Bordeaux",appellation:"Pauillac 1er Cru",type:"rouge",grapes:"Cabernet Sauvignon",rank:"grand_cru",vintage:2016,saqPrice:540,rating:96},"3185370000014":{name:"Sassicaia",region:"Toscane",appellation:"Bolgheri Sassicaia",type:"rouge",grapes:"Cabernet Sauvignon",rank:"grand_cru",vintage:2019,saqPrice:290,rating:96},"3494380000021":{name:"Penfolds Grange",region:"Australie",appellation:"South Australia",type:"rouge",grapes:"Syrah / Shiraz",rank:"icon",vintage:2016,saqPrice:750,rating:98},"3017620000011":{name:"Krug Grande Cuvée",region:"Champagne",appellation:"Champagne",type:"champagne",grapes:"Chardonnay",rank:"grand_cru",vintage:2012,saqPrice:220,rating:98},"3114080000048":{name:"Château Pichon Baron",region:"Bordeaux",appellation:"Pauillac 2ème Cru",type:"rouge",grapes:"Cabernet Sauvignon",rank:"premier_cru",vintage:2015,saqPrice:185,rating:95},"0014800030143":{name:"Opus One",region:"Californie",appellation:"Napa Valley",type:"rouge",grapes:"Cabernet Sauvignon",rank:"icon",vintage:2017,saqPrice:480,rating:97},"3760040000065":{name:"Château d'Yquem",region:"Bordeaux",appellation:"Sauternes 1er Grand Cru",type:"doux",grapes:"Sémillon",rank:"icon",vintage:2015,saqPrice:480,rating:100}};
+let scanStream=null,scanInterval=null,scanMode='add',scannedCodes=[],lastScannedCode=null;
+
+function openScanner(mode='add'){
+  scanMode=mode; scannedCodes=[]; lastScannedCode=null;
+  document.getElementById('scanner-view').classList.remove('hidden');
+  document.getElementById('vf-status').textContent='Pointez vers le code-barres SAQ';
+  document.getElementById('vf-status').style.color='#fff';
+  document.getElementById('scan-manual').value='';
+  document.getElementById('scan-scanned-list').classList.add('hidden');
+  document.getElementById('scan-scanned-list').innerHTML='';
+  document.getElementById('vf-counter').classList.add('hidden');
+  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}).then(stream=>{
+    scanStream=stream;const vid=document.getElementById('scanner-video');vid.srcObject=stream;vid.play();
+    if('BarcodeDetector' in window){
+      const bd=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','code_128']});
+      scanInterval=setInterval(async()=>{try{const r=await bd.detect(vid);if(r.length)handleScan(r[0].rawValue);}catch(e){}},500);
+    }
+  }).catch(()=>{document.getElementById('vf-status').textContent='⚠️ Caméra non disponible — entrez le code ci-dessous';document.getElementById('vf-status').style.color='#F4A827';});
+}
+function closeScanner(){
+  clearInterval(scanInterval);scanInterval=null;
+  if(scanStream){scanStream.getTracks().forEach(t=>t.stop());scanStream=null;}
+  document.getElementById('scanner-view').classList.add('hidden');
+}
+function handleScan(code){
+  // Debounce same code scanned repeatedly
+  if(code===lastScannedCode) return;
+  lastScannedCode=code;
+  setTimeout(()=>{lastScannedCode=null;},1500);
+
+  scannedCodes.push(code);
+  const list=document.getElementById('scan-scanned-list');
+  list.classList.remove('hidden');
+  list.innerHTML=scannedCodes.map((c,i)=>`<div class="ssl-item">Scan ${i+1} : ${c}</div>`).join('');
+  document.getElementById('vf-status').textContent=`✅ ${scannedCodes.length} scan${scannedCodes.length>1?'s':''}`;
+
+  // All scans of the same code? auto-close after 1.2s of inactivity
+  clearTimeout(window._scanTimeout);
+  window._scanTimeout=setTimeout(()=>{ closeScanner(); processScans(); },1200);
+}
+function lookupManual(){const c=document.getElementById('scan-manual').value.trim();if(!c)return;scannedCodes.push(c);closeScanner();processScans();}
+function processScans(){
+  if(!scannedCodes.length)return;
+  // All same code = qty of scans
+  const unique=[...new Set(scannedCodes)];
+  const code=unique[0];
+  const qty=scannedCodes.filter(c=>c===code).length;
+  const p=SAQ_DB[code];
+  if(p){
+    fillFromProduct(p);
+    showSaqBanner('✅','#E8F7F0','#A8DFC0','#1E9E5E','Produit SAQ trouvé',`${p.name}${p.vintage?' · '+p.vintage:''} — ${qty} bouteille${qty>1?'s':''} scannée${qty>1?'s':''}`);
+    // pre-fill rating hint
+    document.getElementById('add-wine-overlay').classList.remove('hidden');
+    // Store qty for placement step
+    window._pendingScanQty=qty;
+  } else {
+    fetchOpenFoodFacts(code,qty);
+  }
+}
+async function fetchOpenFoodFacts(code,qty){
+  document.getElementById('add-wine-overlay').classList.remove('hidden');
+  showSaqBanner('🔍','#FFF8E8','#F4C870','#C98000','Recherche…',`Code ${code}`);
+  try{
+    const res=await fetch(`https://world.openfoodfacts.org/api/v0/product/${code}.json`);
+    const data=await res.json();
+    if(data.status===1&&data.product){const pr=data.product,name=pr.product_name_fr||pr.product_name||pr.brands||'';if(name)document.getElementById('f-name').value=name;showSaqBanner('✅','#E8F7F0','#A8DFC0','#1E9E5E','Produit trouvé',`${name||code} — ${qty} btl`);}
+    else showSaqBanner('⚠️','#FFF0F0','#F4C0C0','#D04040','Code non trouvé','Remplissez manuellement');
+  }catch{showSaqBanner('⚠️','#FFF0F0','#F4C0C0','#D04040','Erreur réseau','Remplissez manuellement');}
+  window._pendingScanQty=qty;
+}
+function showSaqBanner(icon,bg,border,tColor,title,name){
+  const b=document.getElementById('saq-banner');b.style.background=bg;b.style.borderColor=border;
+  document.getElementById('saq-icon').textContent=icon;
+  document.getElementById('saq-title').style.color=tColor;document.getElementById('saq-title').textContent=title;
+  document.getElementById('saq-name').textContent=name;b.classList.remove('hidden');
+}
+function fillFromProduct(p){
+  if(p.name)document.getElementById('f-name').value=p.name;
+  if(p.region)document.getElementById('f-region').value=p.region;
+  if(p.appellation)document.getElementById('f-appel').value=p.appellation;
+  if(p.type)document.getElementById('f-type').value=p.type;
+  if(p.grapes)document.getElementById('f-grape').value=p.grapes;
+  if(p.rank)document.getElementById('f-rank').value=p.rank;
+  if(p.vintage)document.getElementById('f-vintage').value=p.vintage;
+  if(p.saqPrice)document.getElementById('f-saq').value=p.saqPrice;
+  if(p.rating)document.getElementById('f-rating').value=p.rating;
+  onFormChange();
+}
+
+// Override submitWine to handle scan qty + placement
+const _origSubmit=submitWine;
+// We already defined submitWine above; patch placement trigger:
+const _submitWineOrig=submitWine;
+submitWine=function(){
+  const vintage=parseInt(document.getElementById('f-vintage').value)||new Date().getFullYear();
+  const saqPrice=parseFloat(document.getElementById('f-saq').value)||0;
+  const cvRaw=document.getElementById('f-val').value;
+  const currentValue=cvRaw?parseFloat(cvRaw):saqPrice;
+  let apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult;
+  if(overrideEnabled){apogeeStart=parseInt(document.getElementById('f-astart').value)||vintage+8;apogeeEnd=parseInt(document.getElementById('f-aend').value)||vintage+18;autoCalc=false;confLabel='Manuel';factors=[];totalMult=1;}
+  else if(lastCalc){({apogeeStart,apogeeEnd,confLabel,factors,totalMult}=lastCalc);autoCalc=true;}
+  else{apogeeStart=vintage+5;apogeeEnd=vintage+15;autoCalc=false;confLabel='Approx';factors=[];totalMult=1;}
+  const wine={id:editingWineId||Date.now(),name:document.getElementById('f-name').value||'Sans nom',region:document.getElementById('f-region').value||'',appellation:document.getElementById('f-appel').value||'',type:document.getElementById('f-type').value,grapes:document.getElementById('f-grape').value||'',rank:document.getElementById('f-rank').value,vintage,rating:parseInt(document.getElementById('f-rating').value)||0,saqPrice,currentValue,notes:document.getElementById('f-notes').value||'',apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult};
+  const isNew=!editingWineId;
+  if(editingWineId){wines=wines.map(w=>w.id===editingWineId?wine:w);}else{wines.unshift(wine);}
+  save();closeAddWine();renderList();
+  if(isNew&&sections.length>0){
+    const qty=window._pendingScanQty||0;
+    window._pendingScanQty=0;
+    setTimeout(()=>openPlacementPicker(wine.id,qty),350);
+  }
+};
+
+// ════ INIT ════
+load();
+renderList();
+</script>
+</body>
+</html>
