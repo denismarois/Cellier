@@ -315,7 +315,8 @@ input,select,textarea,button{outline:none;font-family:'Inter',sans-serif}
   <div class="photo-widget" id="photo-widget">
    <div class="photo-placeholder" id="photo-placeholder" onclick="triggerPhotoSearch()">
     <div class="photo-placeholder-icon">📷</div>
-    <div class="photo-placeholder-text">Photo automatique ou prendre une photo</div>
+    <div class="photo-placeholder-text">Recherche auto en cours de frappe</div>
+    <div style="font-size:11px;color:#CCC;margin-top:2px">ou appuyez ici pour chercher / prendre une photo</div>
    </div>
    <div class="photo-searching hidden" id="photo-searching">
     <div style="font-size:22px">🔍</div>
@@ -1087,6 +1088,8 @@ function fillFromProduct(p){
   if(p.saqPrice)document.getElementById('f-saq').value=p.saqPrice;
   if(p.rating)document.getElementById('f-rating').value=p.rating;
   onFormChange();
+  // Auto-fill SAQ price from local DB if not already set by scanner
+  if(!p.saqPrice) tryAutoFillSAQPrice();
   // Auto-search photo
   if(p.name) setTimeout(()=>searchWinePhoto(p.name+(p.vintage?' '+p.vintage:'')),300);
 }
@@ -1115,7 +1118,8 @@ submitWine=function(){
   }
 };
 
-// ════ PHOTO ════
+// ════ PHOTO — UNSPLASH ════
+const UNSPLASH_KEY='Xij9m0rSHIAqYSiupuj3ivxKiVTT0zfTFs3vi4bkPh0';
 window._currentPhoto=null;
 let _photoSearchTerm='', _photoSearchResults=[], _photoSearchIdx=0;
 
@@ -1152,25 +1156,31 @@ async function searchWinePhoto(term){
   document.getElementById('photo-preview').classList.add('hidden');
   document.getElementById('photo-actions').classList.add('hidden');
 
-  // Try Wikipedia / Wikidata image search
+  // Try Unsplash first — wine bottle search
   try {
-    const q=encodeURIComponent(term+' wine bottle');
-    const url=`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=5&prop=pageimages&piprop=thumbnail&pithumbsize=400&format=json&origin=*`;
-    const res=await fetch(url);
-    const data=await res.json();
-    const pages=data.query&&data.query.pages?Object.values(data.query.pages):[];
-    const imgs=pages.filter(p=>p.thumbnail).map(p=>p.thumbnail.source);
-    if(imgs.length>0){ _photoSearchResults=imgs; showPhotoResult(0); return; }
+    const queries=[
+      encodeURIComponent(term+' wine bottle'),
+      encodeURIComponent(term+' vin bouteille'),
+      encodeURIComponent('wine bottle '+document.getElementById('f-region').value),
+    ];
+    for(const q of queries){
+      const url=`https://api.unsplash.com/search/photos?query=${q}&per_page=6&orientation=portrait&client_id=${UNSPLASH_KEY}`;
+      const res=await fetch(url);
+      const data=await res.json();
+      const imgs=(data.results||[]).map(r=>r.urls.regular);
+      if(imgs.length>0){ _photoSearchResults=imgs; showPhotoResult(0); return; }
+    }
   } catch(e){}
 
-  // Try Open Library cover as fallback (for named wines that appear in books)
+  // Fallback — generic wine photo from Unsplash
   try {
-    const q=encodeURIComponent(term);
-    const url=`https://openlibrary.org/search.json?q=${q}&limit=3&fields=cover_i`;
+    const type=document.getElementById('f-type').value||'wine';
+    const genericQ=encodeURIComponent(type==='champagne'?'champagne bottle':'wine bottle red');
+    const url=`https://api.unsplash.com/search/photos?query=${genericQ}&per_page=6&orientation=portrait&client_id=${UNSPLASH_KEY}`;
     const res=await fetch(url);
     const data=await res.json();
-    const covers=(data.docs||[]).filter(d=>d.cover_i).map(d=>`https://covers.openlibrary.org/b/id/${d.cover_i}-L.jpg`);
-    if(covers.length>0){ _photoSearchResults=covers; showPhotoResult(0); return; }
+    const imgs=(data.results||[]).map(r=>r.urls.regular);
+    if(imgs.length>0){ _photoSearchResults=imgs; showPhotoResult(0); return; }
   } catch(e){}
 
   // Nothing found — offer camera
@@ -1192,9 +1202,10 @@ function showPhotoResult(idx){
 }
 
 function retryPhotoSearch(){
-  _photoSearchIdx=(_photoSearchIdx+1)%Math.max(1,_photoSearchResults.length);
-  if(_photoSearchResults.length>1){ showPhotoResult(_photoSearchIdx); }
-  else { searchWinePhoto(_photoSearchTerm); }
+  if(_photoSearchResults.length>1){
+    _photoSearchIdx=(_photoSearchIdx+1)%_photoSearchResults.length;
+    showPhotoResult(_photoSearchIdx);
+  } else { searchWinePhoto(_photoSearchTerm); }
 }
 
 function takePhoto(){ document.getElementById('photo-input').click(); }
@@ -1206,11 +1217,179 @@ function onPhotoTaken(event){
   reader.readAsDataURL(file);
 }
 
-function removePhoto(){ resetPhotoWidget(null); document.getElementById('photo-placeholder').querySelector('.photo-placeholder-text').textContent='Photo automatique ou prendre une photo'; document.getElementById('photo-placeholder').onclick=triggerPhotoSearch; }
+function removePhoto(){
+  resetPhotoWidget(null);
+  document.getElementById('photo-placeholder').querySelector('.photo-placeholder-text').textContent='Photo automatique ou prendre une photo';
+  document.getElementById('photo-placeholder').onclick=triggerPhotoSearch;
+}
 
-// Auto-search photo when name is entered
+// Auto-search photo — déclenche 1.2s après arrêt de frappe (fonctionne sur iPhone)
+let _photoTypingTimer=null;
+document.getElementById('f-name').addEventListener('input',function(){
+  clearTimeout(_photoTypingTimer);
+  const val=this.value.trim();
+  if(!val||window._currentPhoto) return;
+  _photoTypingTimer=setTimeout(()=>{
+    searchWinePhoto(val+(document.getElementById('f-vintage').value?' '+document.getElementById('f-vintage').value:''));
+  },1200);
+});
 document.getElementById('f-name').addEventListener('blur',function(){
-  if(this.value.trim()&&!window._currentPhoto){ searchWinePhoto(this.value.trim()+(document.getElementById('f-vintage').value?' '+document.getElementById('f-vintage').value:'')); }
+  clearTimeout(_photoTypingTimer);
+  if(this.value.trim()&&!window._currentPhoto){
+    searchWinePhoto(this.value.trim()+(document.getElementById('f-vintage').value?' '+document.getElementById('f-vintage').value:''));
+  }
+});
+
+// ════ PRIX SAQ — BASE LOCALE ════
+// Clé: "nom normalisé|millésime" → prix CAD
+const SAQ_PRICES={
+  // Bordeaux rouges
+  "chateau margaux|2018":680,"chateau margaux|2016":720,"chateau margaux|2015":750,
+  "chateau latour|2015":820,"chateau latour|2016":800,"chateau latour|2018":780,
+  "chateau petrus|2015":3800,"chateau petrus|2016":3600,"chateau petrus|2018":3500,
+  "mouton rothschild|2016":540,"mouton rothschild|2018":520,"mouton rothschild|2015":580,
+  "haut brion|2015":650,"haut brion|2016":620,"haut brion|2018":600,
+  "ausone|2015":1200,"ausone|2016":1100,
+  "cheval blanc|2015":900,"cheval blanc|2016":850,"cheval blanc|2018":820,
+  "pichon baron|2015":185,"pichon baron|2016":175,"pichon baron|2018":165,
+  "pichon longueville comtesse|2015":195,"pichon longueville comtesse|2016":185,
+  "lynch bages|2015":145,"lynch bages|2016":135,"lynch bages|2018":130,
+  "ducru beaucaillou|2016":175,"ducru beaucaillou|2018":165,
+  "cos d estournel|2016":155,"cos d estournel|2018":145,
+  "leoville las cases|2016":185,"leoville barton|2016":110,
+  "pavie|2015":320,"pavie|2016":295,"pavie|2018":280,
+  "angelus|2015":350,"angelus|2016":330,
+  "chateau smith haut lafitte|2016":95,"chateau smith haut lafitte|2018":88,
+  "chateau pape clement|2016":85,"chateau lynch moussas|2016":55,
+  // Bourgogne rouges
+  "romanee conti|2015":3200,"romanee conti|2016":3500,"romanee conti|2018":3800,
+  "la tache|2015":1200,"la tache|2016":1300,
+  "richebourg|2015":650,"richebourg|2016":680,
+  "musigny comte de vogue|2015":520,"musigny comte de vogue|2016":550,
+  "chambertin rousseau|2015":480,"chambertin rousseau|2016":510,
+  "gevrey chambertin|2018":85,"gevrey chambertin|2019":80,
+  "pommard rugiens|2018":95,"volnay caillerets|2018":90,
+  "nuits saint georges|2018":75,"nuits saint georges|2019":72,
+  // Bourgogne blancs
+  "montrachet leflaive|2019":980,"montrachet leflaive|2020":950,
+  "puligny montrachet|2019":210,"puligny montrachet leflaive|2019":210,
+  "meursault|2019":95,"meursault charmes|2019":145,
+  "chablis grand cru|2019":85,"chablis valmur|2019":90,
+  "corton charlemagne|2018":180,"corton charlemagne|2019":175,
+  // Champagne
+  "krug grande cuvee|2012":220,"krug grande cuvee|2008":280,
+  "dom perignon|2012":185,"dom perignon|2013":175,"dom perignon|2015":195,
+  "cristal roederer|2014":220,"cristal roederer|2015":235,
+  "salon blanc de blancs|2012":320,"salon blanc de blancs|2007":380,
+  "billecart salmon|2008":185,"billecart salmon rose|":95,
+  "bollinger special cuvee|":75,"bollinger la grande annee|2012":145,
+  "taittinger comtes|2011":185,"pol roger winston churchill|2012":175,
+  // Rhône
+  "chapoutier ermitage|2017":185,"chapoutier ermitage|2018":175,
+  "jaboulet hermitage la chapelle|2015":165,
+  "guigal cote rotie la mouline|2016":245,"guigal cote rotie la turque|2016":260,
+  "rostaing cote rotie|2017":195,"rostaing cote rotie|2018":185,
+  "rayas chateauneuf du pape|2015":320,"rayas chateauneuf du pape|2016":295,
+  "beaucastel chateauneuf du pape|2016":95,"beaucastel chateauneuf du pape|2018":88,
+  "pegau chateauneuf du pape|2016":85,
+  // Alsace
+  "weinbach riesling schlossberg|2019":95,"weinbach gewurztraminer|2019":65,
+  "zind humbrecht riesling|2019":55,"trimbach clos sainte hune|2015":185,
+  "hugel riesling jubilee|2016":55,
+  // Loire
+  "huet vouvray|2018":55,"huet vouvray|2019":52,
+  "coulees de serrant|2018":95,"savennieres|2019":45,
+  "pouilly fume dagueneau|2019":85,"sancerre vacheron|2019":55,
+  // Italie
+  "sassicaia|2018":290,"sassicaia|2019":280,"sassicaia|2016":310,
+  "ornellaia|2018":220,"ornellaia|2019":210,
+  "masseto|2016":580,"masseto|2017":550,"masseto|2018":520,
+  "tignanello|2018":135,"tignanello|2019":128,
+  "solaia|2017":245,"solaia|2018":230,
+  "barolo giacomo conterno|2015":195,"barolo giacomo conterno|2016":210,
+  "barbaresco gaja|2016":195,"barbaresco gaja|2017":185,
+  "barolo ceretto|2016":98,"barolo vietti|2016":110,
+  "brunello montalcino biondi santi|2015":295,
+  "amarone allegrini|2015":98,"amarone quintarelli|2012":285,
+  // Espagne
+  "vega sicilia unico|2012":320,"vega sicilia unico|2011":340,
+  "pingus|2016":580,"pingus|2017":540,
+  "la rioja alta gran reserva|2012":55,"muga prado enea|2012":65,
+  // Australie
+  "penfolds grange|2016":750,"penfolds grange|2017":720,"penfolds grange|2018":700,
+  "penfolds bin 707|2016":185,"penfolds bin 389|2018":58,
+  "henschke hill of grace|2015":320,
+  // Californie
+  "opus one|2017":480,"opus one|2018":460,"opus one|2016":500,
+  "screaming eagle|2016":1800,"screaming eagle|2017":1700,
+  "harlan estate|2015":680,"harlan estate|2016":650,
+  "ridge monte bello|2016":320,"ridge monte bello|2017":295,
+  "caymus cabernet|2019":98,"stag's leap artemis|2019":75,
+  "ridge lytton springs|2019":55,"caymus special selection|2018":145,
+  // Argentine
+  "catena zapata adrianna|2018":175,"catena zapata adrianna|2019":165,
+  "achaval ferrer quimera|2018":55,"zuccardi valle de uco|2018":65,
+  // Sauternes/Doux
+  "chateau d yquem|2015":480,"chateau d yquem|2016":520,"chateau d yquem|2014":450,
+  "chateau rieussec|2015":85,"chateau suduiraut|2015":75,
+  // Port
+  "taylor fladgate vintage|2017":95,"graham vintage|2016":88,
+  "quinta do vesuvio|2017":75,
+};
+
+function normalizeName(name){
+  return (name||'').toLowerCase()
+    .replace(/château|chateau/gi,'chateau')
+    .replace(/domaine/gi,'domaine')
+    .replace(/[éèê]/g,'e').replace(/[àâ]/g,'a')
+    .replace(/[îï]/g,'i').replace(/[ôö]/g,'o')
+    .replace(/[ùûü]/g,'u').replace(/[ç]/g,'c')
+    .replace(/[^a-z0-9\s]/g,' ')
+    .replace(/\s+/g,' ').trim();
+}
+
+function lookupSAQPrice(name, vintage){
+  const n=normalizeName(name);
+  const v=vintage?String(vintage):'';
+  // Try exact match with vintage
+  if(SAQ_PRICES[`${n}|${v}`]) return SAQ_PRICES[`${n}|${v}`];
+  // Try without vintage
+  if(SAQ_PRICES[`${n}|`]) return SAQ_PRICES[`${n}|`];
+  // Try partial name match
+  const keys=Object.keys(SAQ_PRICES);
+  for(const key of keys){
+    const [kName,kVintage]=key.split('|');
+    if(n.includes(kName)||kName.includes(n)){
+      if(!v||!kVintage||kVintage===v) return SAQ_PRICES[key];
+    }
+  }
+  return null;
+}
+
+// Auto-fill SAQ price when name or vintage changes
+function tryAutoFillSAQPrice(){
+  const name=document.getElementById('f-name').value.trim();
+  const vintage=document.getElementById('f-vintage').value.trim();
+  if(!name) return;
+  const price=lookupSAQPrice(name,vintage);
+  if(price&&!document.getElementById('f-saq').value){
+    document.getElementById('f-saq').value=price;
+    // Show subtle confirmation
+    const saqInput=document.getElementById('f-saq');
+    saqInput.style.color='#1E9E5E';
+    setTimeout(()=>saqInput.style.color='',2000);
+  }
+}
+
+// Hook into name and vintage blur
+document.getElementById('f-name').addEventListener('blur',function(){
+  tryAutoFillSAQPrice();
+  if(this.value.trim()&&!window._currentPhoto){
+    searchWinePhoto(this.value.trim()+(document.getElementById('f-vintage').value?' '+document.getElementById('f-vintage').value:''));
+  }
+});
+document.getElementById('f-vintage').addEventListener('blur',function(){
+  tryAutoFillSAQPrice();
 });
 
 // ════ COTE MARCHÉ ════
