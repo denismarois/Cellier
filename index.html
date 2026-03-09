@@ -532,6 +532,20 @@ function save(){
   localStorage.setItem('cv_sections',   JSON.stringify(sections));
   localStorage.setItem('cv_placements', JSON.stringify(placements));
 }
+function showToast(msg,duration=3000){
+  let t=document.getElementById('_toast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='_toast';
+    t.style.cssText='position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:9999;transition:opacity .3s;white-space:nowrap;max-width:90vw;text-align:center';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>{t.style.opacity='0';},duration);
+}
+
 function load(){
   try{wines=     JSON.parse(localStorage.getItem('cv_wines'))      ||[];}catch{wines=[];}
   try{sections=  JSON.parse(localStorage.getItem('cv_sections'))   ||[];}catch{sections=[];}
@@ -1213,8 +1227,49 @@ function takePhoto(){ document.getElementById('photo-input').click(); }
 function onPhotoTaken(event){
   const file=event.target.files[0]; if(!file)return;
   const reader=new FileReader();
-  reader.onload=e=>{ resetPhotoWidget(e.target.result); };
+  reader.onload=async e=>{
+    const dataUrl=e.target.result;
+    resetPhotoWidget(dataUrl);
+    const nomField=document.getElementById('f-name');
+    if(!nomField.value.trim()){ await identifyWineFromPhoto(dataUrl); }
+  };
   reader.readAsDataURL(file);
+}
+
+async function identifyWineFromPhoto(dataUrl){
+  showToast('🤖 Identification du vin en cours…');
+  try {
+    const base64=dataUrl.split(',')[1];
+    const mediaType=dataUrl.split(';')[0].split(':')[1];
+    const res=await fetch('https://cave-proxy2.denismarois.workers.dev',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:800,
+        messages:[{role:'user',content:[
+          {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
+          {type:'text',text:'Tu es un expert en vins. Analyse cette etiquette et retourne UNIQUEMENT un JSON sans markdown:\n{"nom":"nom complet","millesime":2018,"type":"rouge|blanc|champagne|rose|doux","region":"region/appellation","cepage":"cepage(s)","producteur":"producteur","pays":"pays","found":true}\nSi tu ne peux pas identifier, retourne {"found":false}.'}
+        ]}]
+      })
+    });
+    const data=await res.json();
+    const text=data.content?.[0]?.text||'';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const info=JSON.parse(clean);
+    if(info.found){
+      if(info.nom) document.getElementById('f-name').value=info.nom;
+      if(info.millesime) document.getElementById('f-year').value=info.millesime;
+      if(info.region) document.getElementById('f-region').value=info.region;
+      if(info.cepage) document.getElementById('f-grape').value=info.cepage;
+      if(info.type){
+        const sel=document.getElementById('f-type');
+        for(let o of sel.options){ if(o.value===info.type){sel.value=info.type;break;} }
+      }
+      if(info.nom){ searchWinePhoto(info.millesime?`${info.nom} ${info.millesime}`:info.nom); }
+      showToast(`✅ ${info.nom||'Vin'} ${info.millesime||''} identifié !`);
+    } else { showToast('⚠️ Vin non identifié — remplissez manuellement'); }
+  } catch(e){ showToast('⚠️ Identification impossible'); }
 }
 
 function removePhoto(){
@@ -1458,7 +1513,7 @@ Réponds UNIQUEMENT en JSON valide, sans markdown, sans texte avant ou après :
 }`;
 
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('https://cave-proxy2.denismarois.workers.dev',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
