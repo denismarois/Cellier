@@ -1218,7 +1218,7 @@ function onPhotoTaken(event){
 }
 
 async function identifyWineFromPhoto(dataUrl){
-  showToast('🤖 Identification du vin en cours…');
+  showToast('🤖 Identification du vin en cours…',10000);
   try {
     const base64=dataUrl.split(',')[1];
     const mediaType=dataUrl.split(';')[0].split(':')[1];
@@ -1230,7 +1230,7 @@ async function identifyWineFromPhoto(dataUrl){
         max_tokens:800,
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:'Tu es un expert en vins. Analyse cette etiquette et retourne UNIQUEMENT un JSON sans markdown:\n{"nom":"nom complet","millesime":2018,"type":"rouge|blanc|champagne|rose|doux","region":"region/appellation","cepage":"cepage(s)","producteur":"producteur","pays":"pays","found":true}\nSi tu ne peux pas identifier, retourne {"found":false}.'}
+          {type:'text',text:'Tu es un expert en vins. Analyse cette etiquette et retourne UNIQUEMENT un JSON valide sans markdown ni texte:\n{"nom":"nom complet du vin","millesime":2018,"type":"rouge","region":"Bordeaux","appellation":"appellation exacte","cepage":"Nebbiolo","classement":"generic","note":91,"found":true}\nPour type utilise: rouge, blanc, champagne, rosé, doux\nPour region utilise exactement un de ces mots: Bordeaux, Bourgogne, Champagne, Rhône, Loire, Alsace, Provence, Languedoc, Toscane, Piémont, Espagne, Australie, Californie, Argentine, Autre\nPour classement utilise: generic, village, premier_cru, grand_cru, icon\nSi tu ne peux pas identifier clairement, retourne {"found":false}.'}
         ]}]
       })
     });
@@ -1239,15 +1239,47 @@ async function identifyWineFromPhoto(dataUrl){
     const clean=text.replace(/```json|```/g,'').trim();
     const info=JSON.parse(clean);
     if(info.found){
+      // Remplir les champs
       if(info.nom) document.getElementById('f-name').value=info.nom;
       if(info.millesime) document.getElementById('f-vintage').value=info.millesime;
-      if(info.region) document.getElementById('f-region').value=info.region;
-      if(info.cepage) document.getElementById('f-grape').value=info.cepage;
+      if(info.note) document.getElementById('f-rating').value=info.note;
+      if(info.appellation) document.getElementById('f-appel').value=info.appellation;
+      // Région — forcer la valeur même si pas dans le select
+      if(info.region){
+        const sel=document.getElementById('f-region');
+        let found=false;
+        for(let o of sel.options){ if(o.value===info.region||o.text===info.region){sel.value=o.value;found=true;break;} }
+        if(!found){ // Ajouter l'option dynamiquement
+          const opt=document.createElement('option');
+          opt.value=info.region; opt.text=info.region;
+          sel.appendChild(opt); sel.value=info.region;
+        }
+      }
+      // Cépage
+      if(info.cepage){
+        const sel=document.getElementById('f-grape');
+        let found=false;
+        for(let o of sel.options){ if(o.value===info.cepage||o.text===info.cepage){sel.value=o.value;found=true;break;} }
+        if(!found){
+          const opt=document.createElement('option');
+          opt.value=info.cepage; opt.text=info.cepage;
+          sel.appendChild(opt); sel.value=info.cepage;
+        }
+      }
+      // Type
       if(info.type){
         const sel=document.getElementById('f-type');
         for(let o of sel.options){ if(o.value===info.type){sel.value=info.type;break;} }
       }
-      if(info.nom){ searchWinePhoto(info.millesime?`${info.nom} ${info.millesime}`:info.nom); }
+      // Classement
+      if(info.classement){
+        const sel=document.getElementById('f-rank');
+        for(let o of sel.options){ if(o.value===info.classement){sel.value=info.classement;break;} }
+      }
+      // Déclencher calcul apogée
+      onFormChange();
+      // GARDER la vraie photo — ne pas lancer Unsplash
+      // La photo est déjà dans _currentPhoto via resetPhotoWidget
       showToast(`✅ ${info.nom||'Vin'} ${info.millesime||''} identifié !`);
     } else { showToast('⚠️ Vin non identifié — remplissez manuellement'); }
   } catch(e){ showToast('⚠️ Identification impossible'); }
