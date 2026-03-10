@@ -950,12 +950,15 @@ function submitWine(){
   if(overrideEnabled){apogeeStart=parseInt(document.getElementById('f-astart').value)||vintage+8;apogeeEnd=parseInt(document.getElementById('f-aend').value)||vintage+18;autoCalc=false;confLabel='Manuel';factors=[];totalMult=1;}
   else if(lastCalc){({apogeeStart,apogeeEnd,confLabel,factors,totalMult}=lastCalc);autoCalc=true;}
   else{apogeeStart=vintage+5;apogeeEnd=vintage+15;autoCalc=false;confLabel='Approx';factors=[];totalMult=1;}
-  const wine={id:editingWineId||Date.now(),name:document.getElementById('f-name').value||'Sans nom',region:document.getElementById('f-region').value||'',appellation:document.getElementById('f-appel').value||'',type:document.getElementById('f-type').value,grapes:document.getElementById('f-grape').value||'',rank:document.getElementById('f-rank').value,vintage,rating:parseInt(document.getElementById('f-rating').value)||0,saqPrice,currentValue,notes:document.getElementById('f-notes').value||'',apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult};
+  const wine={id:editingWineId||Date.now(),name:document.getElementById('f-name').value||'Sans nom',region:document.getElementById('f-region').value||'',appellation:document.getElementById('f-appel').value||'',type:document.getElementById('f-type').value,grapes:document.getElementById('f-grape').value||'',rank:document.getElementById('f-rank').value,vintage,rating:parseInt(document.getElementById('f-rating').value)||0,saqPrice,currentValue,notes:document.getElementById('f-notes').value||'',apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult,photo:window._currentPhoto||null};
   const isNew=!editingWineId;
   if(editingWineId){wines=wines.map(w=>w.id===editingWineId?wine:w);}else{wines.unshift(wine);}
   save(); closeAddWine(); renderList();
-  // After adding a new wine, open placement picker
-  if(isNew && sections.length>0){ setTimeout(()=>openPlacementPicker(wine.id,0),350); }
+  if(isNew&&sections.length>0){
+    const qty=window._pendingScanQty||0;
+    window._pendingScanQty=0;
+    setTimeout(()=>openPlacementPicker(wine.id,qty),350);
+  }
 }
 function deleteWine(){
   if(!editingWineId)return;
@@ -1108,29 +1111,7 @@ function fillFromProduct(p){
   if(p.name) setTimeout(()=>searchWinePhoto(p.name+(p.vintage?' '+p.vintage:'')),300);
 }
 
-// Override submitWine to handle scan qty + placement
-const _origSubmit=submitWine;
-// We already defined submitWine above; patch placement trigger:
-const _submitWineOrig=submitWine;
-submitWine=function(){
-  const vintage=parseInt(document.getElementById('f-vintage').value)||new Date().getFullYear();
-  const saqPrice=parseFloat(document.getElementById('f-saq').value)||0;
-  const cvRaw=document.getElementById('f-val').value;
-  const currentValue=cvRaw?parseFloat(cvRaw):saqPrice;
-  let apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult;
-  if(overrideEnabled){apogeeStart=parseInt(document.getElementById('f-astart').value)||vintage+8;apogeeEnd=parseInt(document.getElementById('f-aend').value)||vintage+18;autoCalc=false;confLabel='Manuel';factors=[];totalMult=1;}
-  else if(lastCalc){({apogeeStart,apogeeEnd,confLabel,factors,totalMult}=lastCalc);autoCalc=true;}
-  else{apogeeStart=vintage+5;apogeeEnd=vintage+15;autoCalc=false;confLabel='Approx';factors=[];totalMult=1;}
-  const wine={id:editingWineId||Date.now(),name:document.getElementById('f-name').value||'Sans nom',region:document.getElementById('f-region').value||'',appellation:document.getElementById('f-appel').value||'',type:document.getElementById('f-type').value,grapes:document.getElementById('f-grape').value||'',rank:document.getElementById('f-rank').value,vintage,rating:parseInt(document.getElementById('f-rating').value)||0,saqPrice,currentValue,notes:document.getElementById('f-notes').value||'',apogeeStart,apogeeEnd,autoCalc,confLabel,factors,totalMult,photo:window._currentPhoto||null};
-  const isNew=!editingWineId;
-  if(editingWineId){wines=wines.map(w=>w.id===editingWineId?wine:w);}else{wines.unshift(wine);}
-  save();closeAddWine();renderList();
-  if(isNew&&sections.length>0){
-    const qty=window._pendingScanQty||0;
-    window._pendingScanQty=0;
-    setTimeout(()=>openPlacementPicker(wine.id,qty),350);
-  }
-};
+
 
 // ════ PHOTO — UNSPLASH ════
 const UNSPLASH_KEY='Xij9m0rSHIAqYSiupuj3ivxKiVTT0zfTFs3vi4bkPh0';
