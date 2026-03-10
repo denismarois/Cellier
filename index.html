@@ -1259,7 +1259,7 @@ async function identifyWineFromPhoto(dataUrl){
     const info=JSON.parse(clean);
     if(info.found){
       if(info.nom) document.getElementById('f-name').value=info.nom;
-      if(info.millesime) document.getElementById('f-year').value=info.millesime;
+      if(info.millesime) document.getElementById('f-vintage').value=info.millesime;
       if(info.region) document.getElementById('f-region').value=info.region;
       if(info.cepage) document.getElementById('f-grape').value=info.cepage;
       if(info.type){
