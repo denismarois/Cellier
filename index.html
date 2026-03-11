@@ -934,7 +934,7 @@ function openAddWine(wine=null){
   }
   document.getElementById('add-wine-overlay').classList.remove('hidden');
 }
-function closeAddWine(){ document.getElementById('add-wine-overlay').classList.add('hidden'); editingWineId=null; }
+function closeAddWine(){ document.getElementById('add-wine-overlay').classList.add('hidden'); editingWineId=null; const b=document.getElementById('saq-link-btn'); if(b)b.remove(); }
 function onFormChange(){
   const region=document.getElementById('f-region').value,type=document.getElementById('f-type').value,grape=document.getElementById('f-grape').value,rank=document.getElementById('f-rank').value,vintage=parseInt(document.getElementById('f-vintage').value),rating=parseInt(document.getElementById('f-rating').value);
   if(!region||!vintage||vintage<1900||vintage>2025){document.getElementById('auto-box').style.display='none';document.getElementById('override-row').classList.add('hidden');lastCalc=null;return;}
@@ -1319,8 +1319,30 @@ async function identifyWineFromPhoto(dataUrl){
       // GARDER la vraie photo — ne pas lancer Unsplash
       // La photo est déjà dans _currentPhoto via resetPhotoWidget
       showToast(`✅ ${info.nom||'Vin'} ${info.millesime||''} identifié !`);
+      // Afficher bouton SAQ
+      showSAQButton(info.nom, info.millesime);
     } else { showToast('⚠️ Vin non identifié — remplissez manuellement'); }
   } catch(e){ showToast('⚠️ Identification impossible'); }
+}
+
+function showSAQButton(nom, millesime){
+  // Supprimer ancien bouton si existant
+  const old=document.getElementById('saq-link-btn');
+  if(old) old.remove();
+  if(!nom) return;
+  // Construire URL de recherche SAQ
+  const query=encodeURIComponent((nom+' '+(millesime||'')).trim());
+  const url=`https://www.saq.com/fr/catalogsearch/result/?q=${query}`;
+  // Créer bouton
+  const btn=document.createElement('a');
+  btn.id='saq-link-btn';
+  btn.href=url;
+  btn.target='_blank';
+  btn.style.cssText='display:flex;align-items:center;justify-content:center;gap:8px;margin:0 16px 10px;background:#C8102E;color:#fff;border:none;border-radius:14px;padding:13px;font-size:14px;font-weight:700;text-decoration:none;';
+  btn.innerHTML='<span style="font-size:18px">🛒</span> Voir le prix sur SAQ.com';
+  // Insérer avant le bouton Ajouter
+  const submitBtn=document.getElementById('aw-submit');
+  if(submitBtn) submitBtn.parentNode.insertBefore(btn, submitBtn);
 }
 
 function removePhoto(){
