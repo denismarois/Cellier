@@ -1263,7 +1263,7 @@ async function identifyWineFromPhoto(dataUrl){
         max_tokens:800,
         messages:[{role:'user',content:[
           {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
-          {type:'text',text:'Tu es un expert en vins. Analyse cette etiquette et retourne UNIQUEMENT un JSON valide sans markdown ni texte:\n{"nom":"nom complet du vin","millesime":2018,"type":"rouge","region":"Bordeaux","appellation":"appellation exacte","cepage":"Nebbiolo","classement":"generic","note":91,"found":true}\nPour type utilise: rouge, blanc, champagne, rosé, doux\nPour region utilise exactement un de ces mots: Bordeaux, Bourgogne, Champagne, Rhône, Loire, Alsace, Provence, Languedoc, Toscane, Piémont, Espagne, Australie, Californie, Argentine, Autre\nPour classement utilise: generic, village, premier_cru, grand_cru, icon\nSi tu ne peux pas identifier clairement, retourne {"found":false}.'}
+          {type:'text',text:'Tu es un expert en vins et tu connais les prix SAQ au Québec. Analyse cette etiquette et retourne UNIQUEMENT un JSON valide sans markdown ni texte:\\n{\"nom\":\"nom complet du vin\",\"millesime\":2018,\"type\":\"rouge\",\"region\":\"Bordeaux\",\"appellation\":\"appellation exacte\",\"cepage\":\"Nebbiolo\",\"classement\":\"generic\",\"note\":91,\"prix_saq\":45.75,\"prix_marche_bas\":55,\"prix_marche_haut\":80,\"found\":true}\\nPour type: rouge, blanc, champagne, rosé, doux\\nPour region: Bordeaux, Bourgogne, Champagne, Rhône, Loire, Alsace, Provence, Languedoc, Toscane, Piémont, Espagne, Australie, Californie, Argentine, Autre\\nPour classement: generic, village, premier_cru, grand_cru, icon\\nprix_saq: prix approximatif en CAD à la SAQ, null si inconnu\\nprix_marche_bas et prix_marche_haut: cote marché secondaire en CAD, null si inconnu\\nSi tu ne peux pas identifier, retourne {\"found\":false}.'}
         ]}]
       })
     });
@@ -1277,6 +1277,11 @@ async function identifyWineFromPhoto(dataUrl){
       if(info.millesime) document.getElementById('f-vintage').value=info.millesime;
       if(info.note) document.getElementById('f-rating').value=info.note;
       if(info.appellation) document.getElementById('f-appel').value=info.appellation;
+      if(info.prix_saq) document.getElementById('f-saq').value=info.prix_saq;
+      if(info.prix_marche_bas&&info.prix_marche_haut){
+        const el=document.getElementById('f-val');
+        if(el) el.value=Math.round((info.prix_marche_bas+info.prix_marche_haut)/2);
+      }
       // Région — forcer la valeur même si pas dans le select
       if(info.region){
         const sel=document.getElementById('f-region');
